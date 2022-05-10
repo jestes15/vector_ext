@@ -158,7 +158,7 @@ int main()
 {
     std::cout << "\n\nTesting std::complex with std::vector_ext\n";
 
-    constexpr auto val = 1;
+    constexpr auto val = 1LL << 20;
     std::random_device gen;
     std::uniform_int_distribution<int> dist(-300, 300);
 
