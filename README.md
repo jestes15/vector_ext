@@ -6,6 +6,8 @@
 - In class support for generating random numbers using multiple random number generators
 - In class support for performing normal addition, subtraction, multiplication and substraction with protection against divide by zero
 - In class copy function using std::execution
+- In class support for use of CUDA to do some vector operations
+- In class support for generating random numbers using cuRAND
 
 ## Upcoming Features
 - In class support to find the inverse of the vector, assuming the vector is a square matrix
