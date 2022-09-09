@@ -295,12 +295,12 @@ namespace std_vec
             #elif defined(_OPENMP)
                 #pragma omp parallel for schedule(guided)
                 for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-                    ret_vec.at(i) = this->at(i) + vector_obj.at(i);
+                    ret_vec.at(i) = this->at(i) - vector_obj.at(i);
             #elif defined(USE_CUDA)
                 user_space::sub(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
             #else
                 for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-                    ret_vec.at(i) = this->at(i) + vector_obj.at(i);
+                    ret_vec.at(i) = this->at(i) - vector_obj.at(i);
             #endif
 
             return ret_vec;
@@ -316,32 +316,36 @@ namespace std_vec
             #elif defined(_OPENMP)
                 #pragma omp parallel for schedule(guided)
                 for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-                    ret_vec.at(i) = this->at(i) + vector_obj.at(i);
+                    ret_vec.at(i) = this->at(i) * vector_obj.at(i);
             #elif defined(USE_CUDA)
                 user_space::mul(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
             #else
                 for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-                    ret_vec.at(i) = this->at(i) + vector_obj.at(i);
+                    ret_vec.at(i) = this->at(i) * vector_obj.at(i);
             #endif
 
             return ret_vec;
         }
         auto operator/(vector_ext<T>& vector_obj) -> vector_ext<T>
         {
+            for (auto& i : vector_obj)
+                if (i == 0)
+                    throw std::range_error("vector_ext::operator/: vector_obj has 0");
+            
             size_check(*this, vector_obj);
             vector_ext<T> ret_vec(this->size());
             #if !defined(_OPENMP) && !defined(NO_EXEC)
                 std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(), [](T& a, T& b)
-                    { return a + b; });
+                    { return a / b; });
             #elif defined(_OPENMP)
                 #pragma omp parallel for schedule(guided)
                 for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-                    ret_vec.at(i) = this->at(i) + vector_obj.at(i);
+                    ret_vec.at(i) = this->at(i) / vector_obj.at(i);
             #elif defined(USE_CUDA)
                 user_space::div(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
             #else
                 for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-                    ret_vec.at(i) = this->at(i) + vector_obj.at(i);
+                    ret_vec.at(i) = this->at(i) / vector_obj.at(i);
             #endif
 
             return ret_vec;
