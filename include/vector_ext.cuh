@@ -571,4 +571,4 @@ namespace std_vec
             #endif
         }
     }; // class vector_ext
-} // namespace std
+} // namespace std_vec
