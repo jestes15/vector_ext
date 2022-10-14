@@ -115,38 +115,36 @@ namespace kernel
 
     // Kernel to impliment matrix multiplication on nxn matrix
     template <typename T>
-    __global__ void matrix_mul(T *dest, T *src_1, T * src_2,
-                            int num_dest_rows, int num_dest_columns,
-                            int num_src_1_rows, int num_src_1_columns,
-                            int num_src_2_rows, int num_src_2_columns)
-    {
-        T c_value = 0;
-
-        int row = blockDim.y * TILE_WIDTH + threadIdx.y;
-        int col = blockDim.x * TILE_WIDTH + threadIdx.x;
-
-        __shared__ T sA[TILE_WIDTH][TILE_WIDTH];
+    __global__ void matrix_mul( T *dest, T *src_1, T *src_2, int dest_row, int dest_col, int src_1_row, int src_1_col, int src_2_row, int src_2_col) {
+        __shared__ T sA[TILE_WIDTH][TILE_WIDTH];   // Tile size of 32x32
         __shared__ T sB[TILE_WIDTH][TILE_WIDTH];
 
-        for (int ph = 0; ph < (TILE_WIDTH + num_src_1_columns - 1) / TILE_WIDTH; ph++)
-        {
-            if ((row < num_src_1_rows) && (threadIdx.x + (ph * TILE_WIDTH)) < num_src_1_columns)
-                sA[threadIdx.y][threadIdx.x] = src_1[(row * num_src_1_columns) + threadIdx.x + (ph * TILE_WIDTH)];
-            else
-                sA[threadIdx.y][threadIdx.x] = 0;
+        int Row = blockDim.y * blockIdx.y + threadIdx.y;
+        int Col = blockDim.x * blockIdx.x + threadIdx.x;
+        T val = static_cast<T>(0.0);
+        sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
+        sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
 
-            if (col < num_src_2_columns && (threadIdx.y + ph * TILE_WIDTH) < num_src_2_rows)
-                sB[threadIdx.y][threadIdx.x] = src_2[(threadIdx.y + ph * TILE_WIDTH) * num_src_2_columns + col];
-            else
-                sB[threadIdx.y][threadIdx.x] = 0;
-
+        for (int ph = 0; ph < (((src_1_col - 1) / TILE_WIDTH) + 1); ph++) {
+            if ((Row < src_1_row) && (threadIdx.x + (ph * TILE_WIDTH)) < src_1_col) {
+                sA[threadIdx.y][threadIdx.x] = src_1[(Row * src_1_col) + threadIdx.x + (ph * TILE_WIDTH)];
+            } else {
+                sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
+            }
+            if (Col < src_2_col && (threadIdx.y + ph * TILE_WIDTH) < src_2_row) {
+                sB[threadIdx.y][threadIdx.x] = src_2[(threadIdx.y + ph * TILE_WIDTH) * src_2_col + Col];
+            } else {
+                sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
+            }
             __syncthreads();
 
-            for (int j = 0; j < TILE_WIDTH; ++j)
-                c_value += sA[threadIdx.y][j] * sB[j][threadIdx.x];
+            for (int j = 0; j < TILE_WIDTH; ++j) {
+                val += sA[threadIdx.y][j] * sB[j][threadIdx.x];
+            }
         }
-        if (row < num_dest_rows && col < num_dest_columns)
-            dest[((blockIdx.y * blockDim.y + threadIdx.y) * num_dest_columns) + (blockIdx.x * blockDim.x)+ threadIdx.x] = c_value;
+        if (Row < dest_row && Col < dest_col) {
+            dest[Row * dest_col + Col] = val;
+        }
     }
 }
 
@@ -156,6 +154,15 @@ namespace auxillary {
         for (std::size_t i = 0; i < row; i++) {
             for (std::size_t j = 0; j < column; j++) {
                 dest[i * column + j] = static_cast<_DestType>(src[i][j]);
+            }
+        }
+    }
+
+    template <typename _DestType, typename _SrcType>
+    void unsquish(_DestType** dest, _SrcType* src, std::size_t column, std::size_t row) {
+        for (std::size_t i = 0; i < row; i++) {
+            for (std::size_t j = 0; j < column; j++) {
+                dest[i][j] = static_cast<_DestType>(src[i * column + j]);
             }
         }
     }
@@ -349,10 +356,14 @@ namespace user_space
     }
 
     // Driver code to handle setting up the device and calling the kernel for matrix multiplication
+    // Matrices already squished into 1d arrays
     template <typename T>
     int matrix_mul(T *dest, T *src_1, T *src_2, unsigned int rows_src_1, unsigned int columns_src_1, unsigned int rows_src_2, unsigned int columns_src_2)
     {
         T *device_src_1, *device_src_2, *device_dest;
+
+        unsigned int dest_rows = rows_src_1;
+        unsigned int dest_columns = columns_src_2;
 
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * rows_src_1 * columns_src_1));
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * rows_src_2 * columns_src_2));
@@ -364,14 +375,60 @@ namespace user_space
         dim3 dimBlock(TILE_WIDTH, TILE_WIDTH, 1);
         dim3 dimGrid;
 
-        dimGrid.x = (columns_src_2 + dimBlock.x - 1) / dimBlock.x;
-        dimGrid.y = (rows_src_1 + dimBlock.y - 1) / dimBlock.y;
+        dimGrid.x = (dest_columns / TILE_WIDTH) + 1;
+        dimGrid.y = (dest_rows / TILE_WIDTH) + 1;
+        dimGrid.z = 1;
 
-        kernel::matrix_mul<<<dimGrid, dimBlock>>>(device_dest, device_src_1, device_src_2, rows_src_1, columns_src_2, rows_src_1, columns_src_1, rows_src_2, columns_src_2);
+        kernel::matrix_mul<<<dimGrid, dimBlock>>>(device_dest, device_src_1, device_src_2, dest_rows, dest_columns, rows_src_1, columns_src_1, rows_src_2, columns_src_2);
 
         CUDA_CALL(cudaDeviceSynchronize());
 
         CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(T) * rows_src_1 * columns_src_2, cudaMemcpyDeviceToHost));
+
+        CUDA_CALL(cudaFree(device_src_1));
+        CUDA_CALL(cudaFree(device_src_2));
+        CUDA_CALL(cudaFree(device_dest));
+
+        return EXIT_SUCCESS;
+    }
+
+    // Driver code to handle setting up the device and calling the kernel for matrix multiplication
+    // Matrices are not squished into 1d arrays, squishing will be done in function
+    template <typename T>
+    int matrix_mul(T **dest, T **src_1, T **src_2, unsigned int rows_src_1, unsigned int columns_src_1, unsigned int rows_src_2, unsigned int columns_src_2)
+    {
+        T *device_src_1, *device_src_2, *device_dest;
+
+        unsigned int dest_rows = rows_src_1;
+        unsigned int dest_columns = columns_src_2;
+
+        T* _dest, *_src_1, *_src_2;
+
+        auxillary::squish(_dest, dest, dest_rows, dest_columns);
+        auxillary::squish(_src_1, src_1, rows_src_1, columns_src_1);
+        auxillary::squish(_src_2, src_2, rows_src_2, columns_src_2);
+
+        CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * rows_src_1 * columns_src_1));
+        CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * rows_src_2 * columns_src_2));
+        CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest), sizeof(T) * rows_src_1 * columns_src_2));
+
+        CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(T) * rows_src_1 * columns_src_1, cudaMemcpyHostToDevice));
+        CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(T) * rows_src_2 * columns_src_2, cudaMemcpyHostToDevice));
+
+        dim3 dimBlock(TILE_WIDTH, TILE_WIDTH, 1);
+        dim3 dimGrid;
+
+        dimGrid.x = (dest_columns / TILE_WIDTH) + 1;
+        dimGrid.y = (dest_rows / TILE_WIDTH) + 1;
+        dimGrid.z = 1;
+
+        kernel::matrix_mul<<<dimGrid, dimBlock>>>(device_dest, device_src_1, device_src_2, dest_rows, dest_columns, rows_src_1, columns_src_1, rows_src_2, columns_src_2);
+
+        CUDA_CALL(cudaDeviceSynchronize());
+
+        CUDA_CALL(cudaMemcpy(_dest, device_dest, sizeof(T) * rows_src_1 * columns_src_2, cudaMemcpyDeviceToHost));
+
+        auxillary::unsquish(dest, _dest, dest_rows, dest_columns);
 
         CUDA_CALL(cudaFree(device_src_1));
         CUDA_CALL(cudaFree(device_src_2));

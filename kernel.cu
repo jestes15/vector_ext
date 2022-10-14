@@ -3,6 +3,7 @@
 #include <chrono>
 
 #define USE_CUDA
+#define MATRIX_MUL
 #include "vector_ext.cuh"
 
 template <typename T>
@@ -35,42 +36,48 @@ namespace tests
     // TODO: Finish test for user_space::matrix_mul
     void _test()
     {
-        const int size = 10;
+        const int size = 2;
 
-        auto src = new int [size][size];
-        auto src2 = new int [size][size];
-        auto dest = new int [size][size];
+        auto src = new int [size * size];
+        auto src2 = new int [size * size];
+        auto dest = new int [size * size];
 
         std::random_device gen;
-        std::uniform_int_distribution<int> dist(-300, 300);
+        std::uniform_int_distribution<int> dist(2, 3);
 
-        std::for_each_n(src, size, [&dist, &gen](int *row) {
-            std::for_each_n(row, size, [&dist, &gen](int &i) {
-                i = static_cast<int>(dist(gen));
-            });
+        std::for_each_n(src, size*size, [&dist, &gen](int &i) {
+            i = static_cast<int>(dist(gen));
         });
 
-        std::for_each_n(src2, size, [&dist, &gen](int *row) {
-            std::for_each_n(row, size, [&dist, &gen](int &i) {
-                i = static_cast<int>(dist(gen));
-            });
+        std::for_each_n(src2, size*size, [&dist, &gen](int &i) {
+            i = static_cast<int>(dist(gen));
         });
 
-        std::for_each_n(src, size, [](int *row) {
-            std::for_each_n(row, size, [](int &i) {
-                std::cout << i << " ";
-            });
-            std::cout << std::endl;
-        });
+        for (unsigned long long i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                printf("%d\t", src[i * size + j]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+
+        for (unsigned long long i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                printf("%d\t", src2[i * size + j]);
+            }
+            printf("\n");
+        }
+        printf("\n");
 
         user_space::matrix_mul(dest, src, src2, size, size, size, size);
 
-        std::for_each_n(dest, size, [](int *row) {
-            std::for_each_n(row, size, [](int &i) {
-                std::cout << i << " ";
-            });
-            std::cout << std::endl;
-        });
+        for (unsigned long long i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                printf("%d\t", dest[i * size + j]);
+            }
+            printf("\n");
+        }
+        printf("\n");
 
     }
     #endif
@@ -119,6 +126,8 @@ int main()
     #if defined(MATRIX_MUL)
     tests::_test();
     #endif
+
+    std::cout << std::endl;
 
     return 0;
 }
