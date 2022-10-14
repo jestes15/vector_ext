@@ -9,10 +9,12 @@
 - In class support for use of CUDA to do some vector operations
 - In class support for generating random numbers using cuRAND
 
+## In Progress
+- In class support for matrix multiplication
+
 ## Upcoming Features
 - In class support to find the inverse of the vector, assuming the vector is a square matrix
 - In class support to transpose the vector
-- In class support for matrix multiplication
 - In class support for finding the determinate, assuming the vector is a square matrix
 
 ## Upcoming Improvements
