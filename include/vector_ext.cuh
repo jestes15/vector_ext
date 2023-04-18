@@ -559,15 +559,15 @@ namespace std_vec
             size_check(*this, dest);
 
             #if !defined(NO_EXEC) && !defined(_OPENMP)
-            std::copy(std::execution::par, this->begin(), this->end(), dest.begin());
+                std::copy(std::execution::par, this->begin(), this->end(), dest.begin());
             #elif defined(_OPENMP)
-            #pragma omp parallel for schedule(guided)
-            for (int i = 0; i < this->size(); ++i)
-            {
-                dest.at(i) = this->at(i);
-            }
+                #pragma omp parallel for schedule(guided)
+                for (int i = 0; i < this->size(); ++i)
+                {
+                    dest.at(i) = this->at(i);
+                }
             #else
-            std::copy(this->begin(), this->end(), dest.begin());
+                std::copy(this->begin(), this->end(), dest.begin());
             #endif
         }
     }; // class vector_ext

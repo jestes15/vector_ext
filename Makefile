@@ -1,8 +1,8 @@
 all:
-	nvc++ --std=c++17 -I./include  kernel.cu -o ./build/main -lcurand
+	nvcc --std=c++17 -I./include  kernel.cu -o ./build/main -lcurand
 
 main:
-	nvc++ --std=c++17 -I./include  main.cu -o ./build/test -lcurand
+	nvcc --std=c++17 -I./include  main.cu -o ./build/test -lcurand
 
 run:
 	./build/main

@@ -34,16 +34,14 @@ namespace tests
 {
     #if defined(MATRIX_MUL)
     // TODO: Finish test for user_space::matrix_mul
-    void _test()
+    void _test(long size)
     {
-        const int size = 2;
-
         auto src = new int [size * size];
         auto src2 = new int [size * size];
         auto dest = new int [size * size];
 
         std::random_device gen;
-        std::uniform_int_distribution<int> dist(2, 3);
+        std::uniform_int_distribution<int> dist(2, 12);
 
         std::for_each_n(src, size*size, [&dist, &gen](int &i) {
             i = static_cast<int>(dist(gen));
@@ -52,7 +50,8 @@ namespace tests
         std::for_each_n(src2, size*size, [&dist, &gen](int &i) {
             i = static_cast<int>(dist(gen));
         });
-
+/*
+        std::cout << "operand 1:" << std::endl;
         for (unsigned long long i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 printf("%d\t", src[i * size + j]);
@@ -61,6 +60,7 @@ namespace tests
         }
         printf("\n");
 
+        std::cout << "operand 2:" << std::endl;
         for (unsigned long long i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 printf("%d\t", src2[i * size + j]);
@@ -68,9 +68,16 @@ namespace tests
             printf("\n");
         }
         printf("\n");
+*/
+        auto start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
         user_space::matrix_mul(dest, src, src2, size, size, size, size);
 
+        auto end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+        std::cout << "Calculation duration " << end - start << " ms" << std::endl;
+/*
+        std::cout << "result:" << std::endl;
         for (unsigned long long i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 printf("%d\t", dest[i * size + j]);
@@ -78,7 +85,7 @@ namespace tests
             printf("\n");
         }
         printf("\n");
-
+*/
     }
     #endif
 
@@ -123,8 +130,11 @@ namespace tests
 
 int main()
 {
+    long size = 0;
+    std::cin >> size;
+
     #if defined(MATRIX_MUL)
-    tests::_test();
+        tests::_test(size);
     #endif
 
     std::cout << std::endl;

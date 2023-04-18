@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "types.cuh"
+
 #include "cuda.h"
 #include "curand.h"
 
@@ -39,23 +41,23 @@ namespace kernel
 {
     // Kernel for adding two arrays
     template <typename T>
-    __global__ void add_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
+    __global__ void add_kernel(T *dest, T *src_1, T *src_2, u64 size)
     {
-        int id = blockDim.x * blockIdx.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
 
-        for (size_t i = id; i < size; i += stride)
+        for (std::size_t i = id; i < size; i += stride)
             dest[i] = src_1[i] + src_2[i];
     }
 
     // Kernel for subtracting two arrays
     template <typename T>
-    __global__ void sub_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
+    __global__ void sub_kernel(T *dest, T *src_1, T *src_2, u64 size)
     {
-        int id = blockDim.x * blockIdx.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
 
-        for (size_t i = id; i < size; i += stride)
+        for (std::size_t i = id; i < size; i += stride)
         {
             dest[i] = src_1[i] - src_2[i];
         }
@@ -63,12 +65,12 @@ namespace kernel
 
     // Kernel for multiplying two arrays
     template <typename T>
-    __global__ void mul_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
+    __global__ void mul_kernel(T *dest, T *src_1, T *src_2, u64 size)
     {
-        int id = blockDim.x * blockIdx.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
 
-        for (size_t i = id; i < size; i += stride)
+        for (std::size_t i = id; i < size; i += stride)
         {
             dest[i] = src_1[i] * src_2[i];
         }
@@ -76,12 +78,12 @@ namespace kernel
 
     // Kernel for dividing two arrays
     template <typename T>
-    __global__ void div_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
+    __global__ void div_kernel(T *dest, T *src_1, T *src_2, u64 size)
     {
-        int id = blockDim.x * blockIdx.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
 
-        for (size_t i = id; i < size; i += stride)
+        for (std::size_t i = id; i < size; i += stride)
         {
             dest[i] = src_1[i] / src_2[i];
         }
@@ -89,12 +91,12 @@ namespace kernel
 
     // Kernel to bring more digits into the non-floating point space
     template <typename T>
-    __global__ void make_float_larger(T *dest, float *device_float_src, unsigned int size, int float_shift)
+    __global__ void make_float_larger(T *dest, f32 *device_float_src, u64 size, u64 float_shift)
     {
-        int id = blockDim.x * blockIdx.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
 
-        for (size_t i = id; i < size; i += stride)
+        for (std::size_t i = id; i < size; i += stride)
         {
             dest[i] = static_cast<T>(device_float_src[i] * float_shift);
         }
@@ -102,12 +104,12 @@ namespace kernel
 
     // Kernel to bring the digits within the max value of the non-floating point space
     template <typename T>
-    __global__ void bring_random_below_max(T *dest, unsigned int size, int max)
+    __global__ void bring_random_below_max(T *dest, u64 size, i64 max)
     {
-        int id = blockDim.x * blockIdx.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
 
-        for (size_t i = id; i < size; i += stride)
+        for (std::size_t i = id; i < size; i += stride)
         {
             dest[i] %= max;
         }
@@ -116,16 +118,16 @@ namespace kernel
     // Kernel to impliment matrix multiplication on nxn matrix
     template <typename T>
     __global__ void matrix_mul( T *dest, T *src_1, T *src_2, int dest_row, int dest_col, int src_1_row, int src_1_col, int src_2_row, int src_2_col) {
-        __shared__ T sA[TILE_WIDTH][TILE_WIDTH];   // Tile size of 32x32
+        __shared__ T sA[TILE_WIDTH][TILE_WIDTH];
         __shared__ T sB[TILE_WIDTH][TILE_WIDTH];
 
-        int Row = blockDim.y * blockIdx.y + threadIdx.y;
-        int Col = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 Row = blockDim.y * blockIdx.y + threadIdx.y;
+        i64 Col = blockDim.x * blockIdx.x + threadIdx.x;
         T val = static_cast<T>(0.0);
         sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
         sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
 
-        for (int ph = 0; ph < (((src_1_col - 1) / TILE_WIDTH) + 1); ph++) {
+        for (u64 ph = 0; ph < (((src_1_col - 1) / TILE_WIDTH) + 1); ph++) {
             if ((Row < src_1_row) && (threadIdx.x + (ph * TILE_WIDTH)) < src_1_col) {
                 sA[threadIdx.y][threadIdx.x] = src_1[(Row * src_1_col) + threadIdx.x + (ph * TILE_WIDTH)];
             } else {
@@ -138,7 +140,7 @@ namespace kernel
             }
             __syncthreads();
 
-            for (int j = 0; j < TILE_WIDTH; ++j) {
+            for (u64 j = 0; j < TILE_WIDTH; ++j) {
                 val += sA[threadIdx.y][j] * sB[j][threadIdx.x];
             }
         }
@@ -175,7 +177,7 @@ namespace user_space
     int add(T *dest, T *src_1, T *src_2, size_t size_v)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        int iLen(1024);
+        i32 iLen(1024);
 
         unsigned long long size = size_v;
 
@@ -207,7 +209,7 @@ namespace user_space
     int sub(T *dest, T *src_1, T *src_2, unsigned int size)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        int iLen(1024);
+        i32 iLen(1024);
 
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -237,7 +239,7 @@ namespace user_space
     int mul(T *dest, T *src_1, T *src_2, unsigned int size)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        int iLen(1024);
+        i32 iLen(1024);
 
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -267,7 +269,7 @@ namespace user_space
     int div(T *dest, T *src_1, T *src_2, unsigned int size)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        int iLen(1024);
+        i32 iLen(1024);
 
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -298,7 +300,7 @@ namespace user_space
     {
         float *random_number_gen_dest;
         T *device_dest_int;
-        int iLen(1024);
+        i32 iLen(1024);
 
         curandGenerator_t gen;
         dim3 block(iLen);
@@ -329,7 +331,7 @@ namespace user_space
     {
         float *random_number_gen_dest;
         T *device_dest_int;
-        int iLen(1024);
+        i32 iLen(1024);
 
         curandGenerator_t gen;
         dim3 block(iLen);
@@ -362,8 +364,8 @@ namespace user_space
     {
         T *device_src_1, *device_src_2, *device_dest;
 
-        unsigned int dest_rows = rows_src_1;
-        unsigned int dest_columns = columns_src_2;
+        u64 dest_rows = rows_src_1;
+        u64 dest_columns = columns_src_2;
 
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * rows_src_1 * columns_src_1));
         CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * rows_src_2 * columns_src_2));
@@ -399,8 +401,8 @@ namespace user_space
     {
         T *device_src_1, *device_src_2, *device_dest;
 
-        unsigned int dest_rows = rows_src_1;
-        unsigned int dest_columns = columns_src_2;
+        u64 dest_rows = rows_src_1;
+        u64 dest_columns = columns_src_2;
 
         T* _dest, *_src_1, *_src_2;
 
