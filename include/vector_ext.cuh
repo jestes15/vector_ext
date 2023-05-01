@@ -37,7 +37,7 @@ namespace std_vec
             return static_cast<long long>(2 * floor(log(size)));
         }
 
-        /* Swaps e and b
+        /* Swaps a and b
          * Usage: swap(*i, *j) where i and j are two variables
          */
         auto swap(T& a, T& b)
