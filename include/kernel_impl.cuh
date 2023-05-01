@@ -15,7 +15,7 @@ namespace cuda_checks {
 std::string CUDA_CHECK_VAL(cudaError_t);
 std::string CURAND_CHECK_VAL(curandStatus_t);
 }
-const int TILE_WIDTH = 32;
+const i32 TILE_WIDTH = 32;
 
 // Check method for checking the error status of a CUDA call
 #define CUDA_CALL(x)                                                                                                   \
@@ -95,7 +95,7 @@ namespace kernel
         }
     }
 
-    // Kernel to bring more digits into the non-floating point space
+    // Kernel to bring more digits into the non-floating poi32 space
     template <typename T>
     __global__ void make_float_larger(T *dest, f32 *device_float_src, u64 size, u64 float_shift)
     {
@@ -108,7 +108,7 @@ namespace kernel
         }
     }
 
-    // Kernel to bring the digits within the max value of the non-floating point space
+    // Kernel to bring the digits within the max value of the non-floating poi32 space
     template <typename T>
     __global__ void bring_random_below_max(T *dest, u64 size, i64 max)
     {
@@ -123,7 +123,7 @@ namespace kernel
 
     // Kernel to impliment matrix multiplication on nxn matrix
     template <typename T>
-    __global__ void matrix_mul( T *dest, T *src_1, T *src_2, int dest_row, int dest_col, int src_1_row, int src_1_col, int src_2_row, int src_2_col) {
+    __global__ void matrix_mul( T *dest, T *src_1, T *src_2, i32 dest_row, i32 dest_col, i32 src_1_row, i32 src_1_col, i32 src_2_row, i32 src_2_col) {
         __shared__ T sA[TILE_WIDTH][TILE_WIDTH];
         __shared__ T sB[TILE_WIDTH][TILE_WIDTH];
 
@@ -187,10 +187,10 @@ namespace user_space
 {
     // Driver code to handle setting up the device and calling the kernel for addition
     template <typename T>
-    int add(T *dest, T *src_1, T *src_2, size_t size_v)
+    i32 add(T *dest, T *src_1, T *src_2, size_t size_v)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        i32 iLen(1024);
+        i32  iLen(1024);
 
     unsigned long long size = size_v;
 
@@ -219,10 +219,10 @@ namespace user_space
 
     // Driver code to handle setting up the device and calling the kernel for subtraction
     template <typename T>
-    int sub(T *dest, T *src_1, T *src_2, unsigned int size)
+    i32 sub(T *dest, T *src_1, T *src_2, u32 size)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        i32 iLen(1024);
+        i32  iLen(1024);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -249,10 +249,10 @@ namespace user_space
 
     // Driver code to handle setting up the device and calling the kernel for multiplication
     template <typename T>
-    int mul(T *dest, T *src_1, T *src_2, unsigned int size)
+    i32 mul(T *dest, T *src_1, T *src_2, u32 size)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        i32 iLen(1024);
+        i32  iLen(1024);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -279,10 +279,10 @@ namespace user_space
 
     // Driver code to handle setting up the device and calling the kernel for division
     template <typename T>
-    int div(T *dest, T *src_1, T *src_2, unsigned int size)
+    i32 div(T *dest, T *src_1, T *src_2, u32 size)
     {
         T *device_src_1, *device_src_2, *device_dest;
-        i32 iLen(1024);
+        i32  iLen(1024);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -309,11 +309,11 @@ namespace user_space
 
     // Driver code to handle setting up the device and calling the kernel for geberating random numbers
     template <typename T>
-    int generate_random_number(T *dest, unsigned int size, int float_shift, int max)
+    i32 generate_random_number(T *dest, u32 size, i32 float_shift, i32 max)
     {
         float *random_number_gen_dest;
         T *device_dest_int;
-        i32 iLen(1024);
+        i32  iLen(1024);
 
     curandGenerator_t gen;
     dim3 block(iLen);
@@ -340,11 +340,11 @@ namespace user_space
 }
 
     template <typename T>
-    int generate_random_number(T *dest, unsigned int size, int float_shift, int max, int seed)
+    i32 generate_random_number(T *dest, u32 size, i32 float_shift, i32 max, i32 seed)
     {
         float *random_number_gen_dest;
         T *device_dest_int;
-        i32 iLen(1024);
+        i32  iLen(1024);
 
     curandGenerator_t gen;
     dim3 block(iLen);
@@ -373,8 +373,8 @@ namespace user_space
 // Driver code to handle setting up the device and calling the kernel for matrix multiplication
 // Matrices already squished into 1d arrays
 template <typename T>
-int matrix_mul(T *dest, T *src_1, T *src_2, unsigned int rows_src_1, unsigned int columns_src_1,
-               unsigned int rows_src_2, unsigned int columns_src_2)
+i32 matrix_mul(T *dest, T *src_1, T *src_2, u32 rows_src_1, u32 columns_src_1,
+               u32 rows_src_2, u32 columns_src_2)
 {
     T *device_src_1, *device_src_2, *device_dest;
 
@@ -412,8 +412,8 @@ int matrix_mul(T *dest, T *src_1, T *src_2, unsigned int rows_src_1, unsigned in
 // Driver code to handle setting up the device and calling the kernel for matrix multiplication
 // Matrices are not squished into 1d arrays, squishing will be done in function
 template <typename T>
-int matrix_mul(T **dest, T **src_1, T **src_2, unsigned int rows_src_1, unsigned int columns_src_1,
-               unsigned int rows_src_2, unsigned int columns_src_2)
+i32 matrix_mul(T **dest, T **src_1, T **src_2, u32 rows_src_1, u32 columns_src_1,
+               u32 rows_src_2, u32 columns_src_2)
 {
     T *device_src_1, *device_src_2, *device_dest;
 

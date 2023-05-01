@@ -21,7 +21,7 @@
 using cll = const long long;
 using ll = long long;
 
-constexpr int MAX_INT = std::numeric_limits<int>::max();
+constexpr i32 MAX_i32 = std::numeric_limits<int>::max();
 
 namespace std_vec
 {
@@ -465,7 +465,7 @@ namespace std_vec
                 std::for_each(std::execution::par, this->begin(), this->end(), function);
             #elif defined(_OPENMP)
                 #pragma omp parallel for schedule(guided)
-                for (int i = 0; i < this->size(); ++i)
+                for (i32 i = 0; i < this->size(); ++i)
                 {
                     function(this->at(i));
                 }
@@ -489,7 +489,7 @@ namespace std_vec
                     });
             #elif defined(_OPENMP)
                 #pragma omp parallel for schedule(guided)
-                for (int i = 0; i < this->size(); ++i) {
+                for (i32 i = 0; i < this->size(); ++i) {
                     auto temp = static_cast<T>(dist(gen) * dist(gen));
                     this->at(i) = (temp) ? temp : 1;
                 }
@@ -512,7 +512,7 @@ namespace std_vec
                 });
         #elif defined(_OPENMP)
             #pragma omp parallel for schedule(guided)
-                for (int i = 0; i < this->size(); ++i) {
+                for (i32 i = 0; i < this->size(); ++i) {
                     auto val = static_cast<T>(dist(gen) * dist(gen));
                     this->at(i) = val ? val : 1;
                 }
@@ -535,7 +535,7 @@ namespace std_vec
                     });
             #elif defined(_OPENMP)
                 #pragma omp parallel for schedule(guided)
-                for (int i = 0; i < this->size(); ++i) {
+                for (i32 i = 0; i < this->size(); ++i) {
                     auto val = std::abs(static_cast<T>(dist(gen) * dist(gen)));
                     this->at(i) = val ? val : 1;
                 }
@@ -548,7 +548,7 @@ namespace std_vec
         }
 
         #if defined(USE_CUDA)
-        auto generate_random_list_cuda(int max = 8, int float_shift = 100)
+        auto generate_random_list_cuda(i32 max = 8, i32 float_shift = 100)
         {
             user_space::generate_random_number(this->data(), this->size(), std::pow(10, float_shift), max);
         }
@@ -562,7 +562,7 @@ namespace std_vec
                 std::copy(std::execution::par, this->begin(), this->end(), dest.begin());
             #elif defined(_OPENMP)
                 #pragma omp parallel for schedule(guided)
-                for (int i = 0; i < this->size(); ++i)
+                for (i32 i = 0; i < this->size(); ++i)
                 {
                     dest.at(i) = this->at(i);
                 }

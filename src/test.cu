@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-int main()
+i32 main()
 {
     quaternion q1(1, 2, 3, 4);
     quaternion q2(5, 6, 7, 8);
