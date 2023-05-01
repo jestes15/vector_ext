@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "types.cuh"
+
 #include "cuda.h"
 #include "curand.h"
 
@@ -43,147 +45,116 @@ namespace std_vec
 // Implemntation of kernels
 namespace kernel
 {
-// Kernel for adding two arrays
-template <typename T> __global__ void add_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
-{
-    int id = blockDim.x * blockIdx.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (size_t i = id; i < size; i += stride)
-        dest[i] = src_1[i] + src_2[i];
-}
-
-__global__ void mystery_kernel(long long *result)
-{
-    int id = blockDim.x * blockIdx.x + threadIdx.x;
-
-    long long result_local = 0;
-    long long new_result = (id * (id - 1) * (id + 1)) / 3;
-
-    long long test = (id * (id - 1) * (id + 1)) / 3;
-
-    for (int i = 1; i < id; i++)
+    // Kernel for adding two arrays
+    template <typename T>
+    __global__ void add_kernel(T *dest, T *src_1, T *src_2, u64 size)
     {
-        for (int j = i + 1; j <= id; j++)
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
+
+        for (std::size_t i = id; i < size; i += stride)
+            dest[i] = src_1[i] + src_2[i];
+    }
+
+    // Kernel for subtracting two arrays
+    template <typename T>
+    __global__ void sub_kernel(T *dest, T *src_1, T *src_2, u64 size)
+    {
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
+
+        for (std::size_t i = id; i < size; i += stride)
         {
-            for (int k = 1; k <= j; k++)
-            {
-                result_local++;
+            dest[i] = src_1[i] - src_2[i];
+        }
+    }
+
+    // Kernel for multiplying two arrays
+    template <typename T>
+    __global__ void mul_kernel(T *dest, T *src_1, T *src_2, u64 size)
+    {
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
+
+        for (std::size_t i = id; i < size; i += stride)
+        {
+            dest[i] = src_1[i] * src_2[i];
+        }
+    }
+
+    // Kernel for dividing two arrays
+    template <typename T>
+    __global__ void div_kernel(T *dest, T *src_1, T *src_2, u64 size)
+    {
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
+
+        for (std::size_t i = id; i < size; i += stride)
+        {
+            dest[i] = src_1[i] / src_2[i];
+        }
+    }
+
+    // Kernel to bring more digits into the non-floating point space
+    template <typename T>
+    __global__ void make_float_larger(T *dest, f32 *device_float_src, u64 size, u64 float_shift)
+    {
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
+
+        for (std::size_t i = id; i < size; i += stride)
+        {
+            dest[i] = static_cast<T>(device_float_src[i] * float_shift);
+        }
+    }
+
+    // Kernel to bring the digits within the max value of the non-floating point space
+    template <typename T>
+    __global__ void bring_random_below_max(T *dest, u64 size, i64 max)
+    {
+        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+        i64 stride = blockDim.x * gridDim.x;
+
+        for (std::size_t i = id; i < size; i += stride)
+        {
+            dest[i] %= max;
+        }
+    }
+
+    // Kernel to impliment matrix multiplication on nxn matrix
+    template <typename T>
+    __global__ void matrix_mul( T *dest, T *src_1, T *src_2, int dest_row, int dest_col, int src_1_row, int src_1_col, int src_2_row, int src_2_col) {
+        __shared__ T sA[TILE_WIDTH][TILE_WIDTH];
+        __shared__ T sB[TILE_WIDTH][TILE_WIDTH];
+
+        i64 Row = blockDim.y * blockIdx.y + threadIdx.y;
+        i64 Col = blockDim.x * blockIdx.x + threadIdx.x;
+        T val = static_cast<T>(0.0);
+        sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
+        sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
+
+        for (u64 ph = 0; ph < (((src_1_col - 1) / TILE_WIDTH) + 1); ph++) {
+            if ((Row < src_1_row) && (threadIdx.x + (ph * TILE_WIDTH)) < src_1_col) {
+                sA[threadIdx.y][threadIdx.x] = src_1[(Row * src_1_col) + threadIdx.x + (ph * TILE_WIDTH)];
+            } else {
+                sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
+            }
+            if (Col < src_2_col && (threadIdx.y + ph * TILE_WIDTH) < src_2_row) {
+                sB[threadIdx.y][threadIdx.x] = src_2[(threadIdx.y + ph * TILE_WIDTH) * src_2_col + Col];
+            } else {
+                sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
+            }
+            __syncthreads();
+
+            for (u64 j = 0; j < TILE_WIDTH; ++j) {
+                val += sA[threadIdx.y][j] * sB[j][threadIdx.x];
             }
         }
-    }
-
-    result[id] = result_local;
-
-    printf("ID: %d, RESULT: %lld, OTHER: %lld, TEST: %lld\n", id, result_local, new_result, test);
-}
-
-// Kernel for subtracting two arrays
-template <typename T> __global__ void sub_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
-{
-    int id = blockDim.x * blockIdx.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (size_t i = id; i < size; i += stride)
-    {
-        dest[i] = src_1[i] - src_2[i];
-    }
-}
-
-// Kernel for multiplying two arrays
-template <typename T> __global__ void mul_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
-{
-    int id = blockDim.x * blockIdx.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (size_t i = id; i < size; i += stride)
-    {
-        dest[i] = src_1[i] * src_2[i];
-    }
-}
-
-// Kernel for dividing two arrays
-template <typename T> __global__ void div_kernel(T *dest, T *src_1, T *src_2, unsigned int size)
-{
-    int id = blockDim.x * blockIdx.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (size_t i = id; i < size; i += stride)
-    {
-        dest[i] = src_1[i] / src_2[i];
-    }
-}
-
-// Kernel to bring more digits into the non-floating point space
-template <typename T>
-__global__ void make_float_larger(T *dest, float *device_float_src, unsigned int size, int float_shift)
-{
-    int id = blockDim.x * blockIdx.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (size_t i = id; i < size; i += stride)
-    {
-        dest[i] = static_cast<T>(device_float_src[i] * float_shift);
-    }
-}
-
-// Kernel to bring the digits within the max value of the non-floating point space
-template <typename T> __global__ void bring_random_below_max(T *dest, unsigned int size, int max)
-{
-    int id = blockDim.x * blockIdx.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (size_t i = id; i < size; i += stride)
-    {
-        dest[i] %= max;
-    }
-}
-
-// Kernel to impliment matrix multiplication on nxn matrix
-template <typename T>
-__global__ void matrix_mul(T *dest, T *src_1, T *src_2, int dest_row, int dest_col, int src_1_row, int src_1_col,
-                           int src_2_row, int src_2_col)
-{
-    __shared__ T sA[TILE_WIDTH][TILE_WIDTH]; // Tile size of 32x32
-    __shared__ T sB[TILE_WIDTH][TILE_WIDTH];
-
-    int Row = blockDim.y * blockIdx.y + threadIdx.y;
-    int Col = blockDim.x * blockIdx.x + threadIdx.x;
-    T val = static_cast<T>(0.0);
-    sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-    sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-
-    for (int ph = 0; ph < (((src_1_col - 1) / TILE_WIDTH) + 1); ph++)
-    {
-        if ((Row < src_1_row) && (threadIdx.x + (ph * TILE_WIDTH)) < src_1_col)
-        {
-            sA[threadIdx.y][threadIdx.x] = src_1[(Row * src_1_col) + threadIdx.x + (ph * TILE_WIDTH)];
-        }
-        else
-        {
-            sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-        }
-        if (Col < src_2_col && (threadIdx.y + ph * TILE_WIDTH) < src_2_row)
-        {
-            sB[threadIdx.y][threadIdx.x] = src_2[(threadIdx.y + ph * TILE_WIDTH) * src_2_col + Col];
-        }
-        else
-        {
-            sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-        }
-        __syncthreads();
-
-        for (int j = 0; j < TILE_WIDTH; ++j)
-        {
-            val += sA[threadIdx.y][j] * sB[j][threadIdx.x];
+        if (Row < dest_row && Col < dest_col) {
+            dest[Row * dest_col + Col] = val;
         }
     }
-    if (Row < dest_row && Col < dest_col)
-    {
-        dest[Row * dest_col + Col] = val;
-    }
 }
-} // namespace kernel
 
 namespace auxillary
 {
@@ -214,11 +185,12 @@ void unsquish(_DestType **dest, _SrcType *src, std::size_t column, std::size_t r
 
 namespace user_space
 {
-// Driver code to handle setting up the device and calling the kernel for addition
-template <typename T> int add(T *dest, T *src_1, T *src_2, size_t size_v)
-{
-    T *device_src_1, *device_src_2, *device_dest;
-    int iLen(1024);
+    // Driver code to handle setting up the device and calling the kernel for addition
+    template <typename T>
+    int add(T *dest, T *src_1, T *src_2, size_t size_v)
+    {
+        T *device_src_1, *device_src_2, *device_dest;
+        i32 iLen(1024);
 
     unsigned long long size = size_v;
 
@@ -245,11 +217,12 @@ template <typename T> int add(T *dest, T *src_1, T *src_2, size_t size_v)
     return EXIT_SUCCESS;
 }
 
-// Driver code to handle setting up the device and calling the kernel for subtraction
-template <typename T> int sub(T *dest, T *src_1, T *src_2, unsigned int size)
-{
-    T *device_src_1, *device_src_2, *device_dest;
-    int iLen(1024);
+    // Driver code to handle setting up the device and calling the kernel for subtraction
+    template <typename T>
+    int sub(T *dest, T *src_1, T *src_2, unsigned int size)
+    {
+        T *device_src_1, *device_src_2, *device_dest;
+        i32 iLen(1024);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -274,11 +247,12 @@ template <typename T> int sub(T *dest, T *src_1, T *src_2, unsigned int size)
     return EXIT_SUCCESS;
 }
 
-// Driver code to handle setting up the device and calling the kernel for multiplication
-template <typename T> int mul(T *dest, T *src_1, T *src_2, unsigned int size)
-{
-    T *device_src_1, *device_src_2, *device_dest;
-    int iLen(1024);
+    // Driver code to handle setting up the device and calling the kernel for multiplication
+    template <typename T>
+    int mul(T *dest, T *src_1, T *src_2, unsigned int size)
+    {
+        T *device_src_1, *device_src_2, *device_dest;
+        i32 iLen(1024);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -303,11 +277,12 @@ template <typename T> int mul(T *dest, T *src_1, T *src_2, unsigned int size)
     return EXIT_SUCCESS;
 }
 
-// Driver code to handle setting up the device and calling the kernel for division
-template <typename T> int div(T *dest, T *src_1, T *src_2, unsigned int size)
-{
-    T *device_src_1, *device_src_2, *device_dest;
-    int iLen(1024);
+    // Driver code to handle setting up the device and calling the kernel for division
+    template <typename T>
+    int div(T *dest, T *src_1, T *src_2, unsigned int size)
+    {
+        T *device_src_1, *device_src_2, *device_dest;
+        i32 iLen(1024);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
@@ -332,12 +307,13 @@ template <typename T> int div(T *dest, T *src_1, T *src_2, unsigned int size)
     return EXIT_SUCCESS;
 }
 
-// Driver code to handle setting up the device and calling the kernel for geberating random numbers
-template <typename T> int generate_random_number(T *dest, unsigned int size, int float_shift, int max)
-{
-    float *random_number_gen_dest;
-    T *device_dest_int;
-    int iLen(1024);
+    // Driver code to handle setting up the device and calling the kernel for geberating random numbers
+    template <typename T>
+    int generate_random_number(T *dest, unsigned int size, int float_shift, int max)
+    {
+        float *random_number_gen_dest;
+        T *device_dest_int;
+        i32 iLen(1024);
 
     curandGenerator_t gen;
     dim3 block(iLen);
@@ -363,11 +339,12 @@ template <typename T> int generate_random_number(T *dest, unsigned int size, int
     return EXIT_SUCCESS;
 }
 
-template <typename T> int generate_random_number(T *dest, unsigned int size, int float_shift, int max, int seed)
-{
-    float *random_number_gen_dest;
-    T *device_dest_int;
-    int iLen(1024);
+    template <typename T>
+    int generate_random_number(T *dest, unsigned int size, int float_shift, int max, int seed)
+    {
+        float *random_number_gen_dest;
+        T *device_dest_int;
+        i32 iLen(1024);
 
     curandGenerator_t gen;
     dim3 block(iLen);
@@ -401,8 +378,8 @@ int matrix_mul(T *dest, T *src_1, T *src_2, unsigned int rows_src_1, unsigned in
 {
     T *device_src_1, *device_src_2, *device_dest;
 
-    unsigned int dest_rows = rows_src_1;
-    unsigned int dest_columns = columns_src_2;
+        u64 dest_rows = rows_src_1;
+        u64 dest_columns = columns_src_2;
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * rows_src_1 * columns_src_1));
     CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * rows_src_2 * columns_src_2));
@@ -440,8 +417,8 @@ int matrix_mul(T **dest, T **src_1, T **src_2, unsigned int rows_src_1, unsigned
 {
     T *device_src_1, *device_src_2, *device_dest;
 
-    unsigned int dest_rows = rows_src_1;
-    unsigned int dest_columns = columns_src_2;
+        u64 dest_rows = rows_src_1;
+        u64 dest_columns = columns_src_2;
 
     T *_dest, *_src_1, *_src_2;
 
