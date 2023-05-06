@@ -1,3 +1,4 @@
+#include <array>
 #include <iostream>
 
 template <typename T>
@@ -9,6 +10,12 @@ struct unit_vector {
 template <typename T> class quaternion
 {
   public:
+    // Default Constructor
+    quaternion() : q0(static_cast<T>(0)), q1(static_cast<T>(0)), q2(static_cast<T>(0)), q3(static_cast<T>(0))
+    {
+    }
+
+    // Constructor with 1 to 4 arguments
     quaternion(T q0, T q1, T q2, T q3) : q0(q0), q1(q1), q2(q2), q3(q3)
     {
     }
@@ -21,12 +28,37 @@ template <typename T> class quaternion
     quaternion(T q0) : q0(q0), q1(static_cast<T>(0)), q2(static_cast<T>(0)), q3(static_cast<T>(0))
     {
     }
-    quaternion() : q0(static_cast<T>(0)), q1(static_cast<T>(0)), q2(static_cast<T>(0)), q3(static_cast<T>(0))
-    {
-    }
+
+    // Unit Vector Constructors
     quaternion(T q0, unit_vector<T> v) : q0(q0), q1(v.i_coeff), q2(v.j_coeff), q3(v.z_coeff)
     {
     }
+    quaternion(unit_vector<T> v) : q0(q0), q1(v.i_coeff), q2(v.j_coeff), q3(v.z_coeff)
+    {
+    }
+
+    // C Style Array Constructors
+    quaternion(T q0, T[3] v) : q0(q0), q1(v[0]), q2(v[1]), q3(v[2])
+    {
+    }
+    quaternion(T[3] v) : q0(static_cast<T>(0)), q1(v[0]), q2(v[1]), q3(v[2])
+    {
+    }
+    quaternion(T[4] v) : q0(v[0]), q1(v[1]), q2(v[2]), q3(v[3])
+    {
+    }
+
+    // std::array Constructors
+    quaternion(T q0, std::array<T, 3> v) : q0(q0), q1(v[0]), q2(v[1]), q3(v[2])
+    {
+    }
+    quaternion(std::array<T, 3> v) : q0(static_cast<T>(0)), q1(v[0]), q2(v[1]), q3(v[2])
+    {
+    }
+    quaternion(std::array<T, 4> v) : q0(v[0]), q1(v[1]), q2(v[2]), q3(v[3])
+    {
+    }
+
 
     // Get methods
     T get_a() const
@@ -90,10 +122,7 @@ template <typename T> class quaternion
     bool operator!=(const quaternion &q) const
     {
         return !(*this == q);
-    }
-
-    // Quaternion Spaceship Operator
-    
+    }    
 
     // Quaternion Output Stream
     friend std::ostream &operator<<(std::ostream &os, const quaternion &q)
