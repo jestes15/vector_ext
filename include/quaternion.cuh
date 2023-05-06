@@ -1,72 +1,124 @@
 #include <iostream>
 
+template <typename T>
+struct unit_vector {
+    T i_coeff, j_coeff, z_coeff;
+};
+
 // https://en.wikipedia.org/wiki/Quaternion
 template <typename T> class quaternion
 {
   public:
-    quaternion(T a, T b, T c, T d) : a(a), b(b), c(c), d(d)
+    quaternion(T q0, T q1, T q2, T q3) : q0(q0), q1(q1), q2(q2), q3(q3)
     {
     }
-    quaternion() : a(static_cast<T>(0)), b(static_cast<T>(0)), c(static_cast<T>(0)), d(static_cast<T>(0))
+    quaternion(T q0, T q1, T q2) : q0(q0), q1(q1), q2(q2), q3(static_cast<T>(0))
+    {
+    }
+    quaternion(T q0, T q1) : q0(q0), q1(q1), q2(static_cast<T>(0)), q3(static_cast<T>(0))
+    {
+    }
+    quaternion(T q0) : q0(q0), q1(static_cast<T>(0)), q2(static_cast<T>(0)), q3(static_cast<T>(0))
+    {
+    }
+    quaternion() : q0(static_cast<T>(0)), q1(static_cast<T>(0)), q2(static_cast<T>(0)), q3(static_cast<T>(0))
+    {
+    }
+    quaternion(T q0, unit_vector<T> v) : q0(q0), q1(v.i_coeff), q2(v.j_coeff), q3(v.z_coeff)
     {
     }
 
     // Get methods
     T get_a() const
     {
-        return a;
+        return q0;
     }
     T get_b() const
     {
-        return b;
+        return q1;
     }
     T get_c() const
     {
-        return c;
+        return q2;
     }
     T get_d() const
     {
-        return d;
-    }
- 
-    // Set methods
-    void set_a(T a)
-    {
-        this->a = a;
-    }
-    void set_b(T b)
-    {
-        this->b = b;
-    }
-    void set_c(T c)
-    {
-        this->c = c;
-    }
-    void set_d(T d)
-    {
-        this->d = d;
+        return q3;
     }
 
-    quaternion operator+(const quaternion &q) const
+    // Set methods
+    void set_a(T q0)
     {
-        return quaternion(a + q.a, b + q.b, c + q.c, d + q.d);
+        this->q0 = q0;
     }
-    quaternion operator-(const quaternion &q) const
+    void set_b(T q1)
     {
-        return quaternion(a - q.a, b - q.b, c - q.c, d - q.d);
+        this->q1 = q1;
     }
+    void set_c(T q2)
+    {
+        this->q2 = q2;
+    }
+    void set_d(T q3)
+    {
+        this->q3 = q3;
+    }
+
+    T magnitude() const
+    {
+        return std::sqrt(std::pow(this->q0, 2) + std::pow(this->q1, 2) + std::pow(this->q2, 2) + std::pow(this->q3, 2));
+    }
+
+    quaternion inverse() const
+    {
+        double fractional_component =
+            1.0 / static_cast<double>(std::pow(q0, 2) + std::pow(q1, 2) + std::pow(q2, 2) + std::pow(q3, 2));
+        return fractional_component * quaternion(q0, -q1, -q2, -q3);
+    }
+
+    quaternion complex_conjugate() const {
+        return quaternion(q0, -q1, -q2, -q3);
+    }
+
+    // Quaternion Equality Operator
+    bool operator==(const quaternion &q) const
+    {
+        return (q0 == q.q0 && q1 == q.q1 && q2 == q.q2 && q3 == q.q3);
+    }
+
+    // Quaternion Inequality Operator
+    bool operator!=(const quaternion &q) const
+    {
+        return !(*this == q);
+    }
+
+    // Quaternion Spaceship Operator
+    
 
     // Quaternion Output Stream
     friend std::ostream &operator<<(std::ostream &os, const quaternion &q)
     {
-        os << "(" << q.a << " + " << q.b << "i + " << q.c << "j + " << q.d << "k)";
+        os << "(" << q.q0 << " + " << q.q1 << "i + " << q.q2 << "j + " << q.q3 << "k)";
         return os;
     }
 
   private:
-    T a, b, c, d;
+    T q0, q1, q2, q3;
 };
 
+// Addition operators
+template <typename T> quaternion<T> operator+(const quaternion<T> &q, const quaternion<T> &s)
+{
+    return quaternion(q.get_a() + s.get_a(), q.get_b() + s.get_b(), q.get_c() + s.get_c(), q.get_d() + s.get_d());
+}
+
+// Subtraction operators
+template <typename T> quaternion<T> operator-(const quaternion<T> &q, const quaternion<T> &s)
+{
+    return quaternion(q.get_a() - s.get_a(), q.get_b() - s.get_b(), q.get_c() - s.get_c(), q.get_d() - s.get_d());
+}
+
+// Multiplication operators
 template <typename T> quaternion<T> operator*(const quaternion<T> &q, const quaternion<T> &s)
 {
     return quaternion(q.get_a() * s.get_a() - q.get_b() * s.get_b() - q.get_c() * s.get_c() - q.get_d() * s.get_d(),
