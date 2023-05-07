@@ -1,8 +1,8 @@
 #include <array>
 #include <iostream>
 
-template <typename T>
-struct unit_vector {
+template <typename T> struct unit_vector
+{
     T i_coeff, j_coeff, z_coeff;
 };
 
@@ -30,35 +30,31 @@ template <typename T> class quaternion
     }
 
     // Unit Vector Constructors
-    quaternion(T q0, unit_vector<T> v) : q0(q0), q1(v.i_coeff), q2(v.j_coeff), q3(v.z_coeff)
+    quaternion(T q0, struct unit_vector<T> v) : q0(q0), q1(v.i_coeff), q2(v.j_coeff), q3(v.z_coeff)
     {
     }
-    quaternion(unit_vector<T> v) : q0(q0), q1(v.i_coeff), q2(v.j_coeff), q3(v.z_coeff)
+    quaternion(struct unit_vector<T> v) : q0(static_cast<T>(0)), q1(v.i_coeff), q2(v.j_coeff), q3(v.z_coeff)
     {
     }
 
     // C Style Array Constructors
-    quaternion(T q0, T[3] v) : q0(q0), q1(v[0]), q2(v[1]), q3(v[2])
+    quaternion(T q0, T v[3]) : q0(q0), q1(v[0]), q2(v[1]), q3(v[2])
     {
     }
-    quaternion(T[3] v) : q0(static_cast<T>(0)), q1(v[0]), q2(v[1]), q3(v[2])
-    {
-    }
-    quaternion(T[4] v) : q0(v[0]), q1(v[1]), q2(v[2]), q3(v[3])
+    quaternion(T v[3]) : q0(static_cast<T>(0)), q1(v[0]), q2(v[1]), q3(v[2])
     {
     }
 
     // std::array Constructors
-    quaternion(T q0, std::array<T, 3> v) : q0(q0), q1(v[0]), q2(v[1]), q3(v[2])
+    quaternion(T q0, std::array<T, 3UL> v) : q0(q0), q1(v.at(0)), q2(v.at(1)), q3(v.at(2))
     {
     }
-    quaternion(std::array<T, 3> v) : q0(static_cast<T>(0)), q1(v[0]), q2(v[1]), q3(v[2])
+    quaternion(std::array<T, 3UL> v) : q0(static_cast<T>(0)), q1(v.at(0)), q2(v.at(1)), q3(v.at(2))
     {
     }
-    quaternion(std::array<T, 4> v) : q0(v[0]), q1(v[1]), q2(v[2]), q3(v[3])
+    quaternion(std::array<T, 4UL> v) : q0(v.at(0)), q1(v.at(1)), q2(v.at(2)), q3(v.at(3))
     {
     }
-
 
     // Get methods
     T get_a() const
@@ -108,7 +104,8 @@ template <typename T> class quaternion
         return fractional_component * quaternion(q0, -q1, -q2, -q3);
     }
 
-    quaternion complex_conjugate() const {
+    quaternion complex_conjugate() const
+    {
         return quaternion(q0, -q1, -q2, -q3);
     }
 
@@ -122,7 +119,7 @@ template <typename T> class quaternion
     bool operator!=(const quaternion &q) const
     {
         return !(*this == q);
-    }    
+    }
 
     // Quaternion Output Stream
     friend std::ostream &operator<<(std::ostream &os, const quaternion &q)
