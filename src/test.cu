@@ -32,7 +32,9 @@ enum tests
     norm,
     inverse,
     rotation,
-    interpolate
+    interpolate_slerp,
+    interpolate_nlerp,
+    interpolate_lerp
 };
 
 std::map<tests, std::string> test_names = {{default_constructor, "default_constructor"},
@@ -55,7 +57,9 @@ std::map<tests, std::string> test_names = {{default_constructor, "default_constr
                                            {norm, "norm"},
                                            {inverse, "inverse"},
                                            {rotation, "rotation"},
-                                           {interpolate, "interpolate"}};
+                                           {interpolate_slerp, "interpolate_slerp"},
+                                           {interpolate_nlerp, "interpolate_nlerp"},
+                                           {interpolate_lerp, "interpolate_lerp"}};
 
 } // namespace test_quaternion_enum
 
@@ -88,7 +92,9 @@ class test_quaternion_class
         test_subtraction();
         test_multiplication();
 
-        test_interpolation();
+        test_interpolation_slerp();
+        test_interpolation_nlerp();
+        test_interpolation_lerp();
         return results;
     }
 
@@ -354,7 +360,7 @@ class test_quaternion_class
         }
     }
 
-    void test_interpolation()
+    void test_interpolation_slerp()
     {
         quaternion q1(1, 2, 3, 4);
         quaternion q2(5, 6, 7, 8);
@@ -365,26 +371,95 @@ class test_quaternion_class
         std::optional<quaternion> result =
             q1_normalized.interpolate(q2_normalized, quaternion_interpolation_method::slerp, 0.5);
 
-        quaternion expected_result = quaternion(0.283023303767278, 0.413232827790139, 0.543442351813000, 0.673651875835861);
+        quaternion expected_result =
+            quaternion(0.283023303767278, 0.413232827790139, 0.543442351813000, 0.673651875835861);
 
         if (!result.has_value())
         {
             std::stringstream ss;
-            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate]
+            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate_slerp]
                << " failed. Expected: " << expected_result << " Got: None";
-            this->results[test_quaternion_enum::interpolate] = ss.str();
+            this->results[test_quaternion_enum::interpolate_slerp] = ss.str();
             return;
         }
-        else if (result.value() == expected_result)
-            this->results[test_quaternion_enum::interpolate] = std::nullopt;
+        else if (abs(result.value() - expected_result) < this->epsilon)
+            this->results[test_quaternion_enum::interpolate_slerp] = std::nullopt;
         else
         {
             std::stringstream ss;
-            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate]
+            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate_slerp]
                << " failed. Expected: " << expected_result << " Got: " << result.value();
-            this->results[test_quaternion_enum::interpolate] = ss.str();
+            this->results[test_quaternion_enum::interpolate_slerp] = ss.str();
         }
     }
+
+    void test_interpolation_nlerp()
+    {
+        quaternion q1(1, 2, 3, 4);
+        quaternion q2(5, 6, 7, 8);
+
+        quaternion q1_normalized = q1.normalize();
+        quaternion q2_normalized = q2.normalize();
+
+        std::optional<quaternion> result =
+            q1_normalized.interpolate(q2_normalized, quaternion_interpolation_method::nlerp, 0.5);
+
+        quaternion expected_result =
+            quaternion(0.283023303767278, 0.413232827790139, 0.543442351813000, 0.673651875835862);
+
+        if (!result.has_value())
+        {
+            std::stringstream ss;
+            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate_nlerp]
+               << " failed. Expected: " << expected_result << " Got: None";
+            this->results[test_quaternion_enum::interpolate_nlerp] = ss.str();
+            return;
+        }
+        else if (abs(result.value() - expected_result) < this->epsilon)
+            this->results[test_quaternion_enum::interpolate_nlerp] = std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate_nlerp]
+               << " failed. Expected: " << expected_result << " Got: " << result.value();
+            this->results[test_quaternion_enum::interpolate_nlerp] = ss.str();
+        }
+    }
+
+    void test_interpolation_lerp()
+    {
+        quaternion q1(1, 2, 3, 4);
+        quaternion q2(5, 6, 7, 8);
+
+        quaternion q1_normalized = q1.normalize();
+        quaternion q2_normalized = q2.normalize();
+
+        std::optional<quaternion> result =
+            q1_normalized.interpolate(q2_normalized, quaternion_interpolation_method::lerp, 0.5);
+
+        quaternion expected_result =
+            quaternion(0.280811603812254, 0.410003598908726, 0.539195594005199, 0.668387589101672);
+
+        if (!result.has_value())
+        {
+            std::stringstream ss;
+            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate_lerp]
+               << " failed. Expected: " << expected_result << " Got: None";
+            this->results[test_quaternion_enum::interpolate_lerp] = ss.str();
+            return;
+        }
+        else if (abs(result.value() - expected_result) < this->epsilon)
+            this->results[test_quaternion_enum::interpolate_lerp] = std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::interpolate_lerp]
+               << " failed. Expected: " << expected_result << " Got: " << result.value();
+            this->results[test_quaternion_enum::interpolate_lerp] = ss.str();
+        }
+    }
+
+    quaternion epsilon = quaternion(0.00001, 0.00001, 0.00001, 0.00001);
 };
 } // namespace test_quaternion
 

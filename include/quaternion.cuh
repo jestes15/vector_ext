@@ -154,8 +154,12 @@ class quaternion
 
     quaternion lerp(quaternion &q, double &t) const
     {
-        return quaternion((1.0 - t) * q.q0 + t * this->q0, (1.0 - t) * q.q1 + t * this->q1, (1.0 - t) * q.q2 + t * this->q2,
-                          (1.0 - t) * q.q3 + t * this->q3);
+        return quaternion(
+            (1 - t) * this->q0 + t * q.q0, 
+            (1 - t) * this->q1 + t * q.q1, 
+            (1 - t) * this->q2 + t * q.q2,
+            (1 - t) * this->q3 + t * q.q3
+        );
     }
 
     quaternion nlerp(quaternion &q, double &t) const
