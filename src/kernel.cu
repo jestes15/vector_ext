@@ -14,7 +14,7 @@
 #include "kernel_impl.cuh"
 #include "vector_ext.cuh"
 
-template <typename T> void print_array(std::vector<T> &array)
+template <typename  _Type > void print_array(std::vector< _Type > &array)
 {
     std::cout << "[ ";
     for (auto &i : array)
@@ -24,8 +24,8 @@ template <typename T> void print_array(std::vector<T> &array)
     std::cout << "]" << std::endl;
 }
 
-template <typename T>
-i32 validate_dest(std_vec::vector_ext<T> &dest, std_vec::vector_ext<T> &src, std_vec::vector_ext<T> &src2)
+template <typename  _Type >
+i32 validate_dest(std_vec::vector_ext< _Type > &dest, std_vec::vector_ext< _Type > &src, std_vec::vector_ext< _Type > &src2)
 {
     for (i32 i = 0; i < dest.size(); i++)
     {

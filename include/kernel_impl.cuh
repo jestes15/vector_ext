@@ -10,11 +10,12 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-namespace cuda_checks {
+namespace cuda_checks
+{
 // CUDA return value checks
 std::string CUDA_CHECK_VAL(cudaError_t);
 std::string CURAND_CHECK_VAL(curandStatus_t);
-}
+} // namespace cuda_checks
 const i32 TILE_WIDTH = 32;
 
 // Check method for checking the error status of a CUDA call
@@ -45,116 +46,122 @@ namespace std_vec
 // Implemntation of kernels
 namespace kernel
 {
-    // Kernel for adding two arrays
-    template <typename T>
-    __global__ void add_kernel(T *dest, T *src_1, T *src_2, u64 size)
+// Kernel for adding two arrays
+template <typename _Type> __global__ void add_kernel(_Type *dest, _Type *src_1, _Type *src_2, u64 size)
+{
+    i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+    i64 stride = blockDim.x * gridDim.x;
+
+    for (std::size_t i = id; i < size; i += stride)
+        dest[i] = src_1[i] + src_2[i];
+}
+
+// Kernel for subtracting two arrays
+template <typename _Type> __global__ void sub_kernel(_Type *dest, _Type *src_1, _Type *src_2, u64 size)
+{
+    i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+    i64 stride = blockDim.x * gridDim.x;
+
+    for (std::size_t i = id; i < size; i += stride)
     {
-        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
-        i64 stride = blockDim.x * gridDim.x;
-
-        for (std::size_t i = id; i < size; i += stride)
-            dest[i] = src_1[i] + src_2[i];
-    }
-
-    // Kernel for subtracting two arrays
-    template <typename T>
-    __global__ void sub_kernel(T *dest, T *src_1, T *src_2, u64 size)
-    {
-        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
-        i64 stride = blockDim.x * gridDim.x;
-
-        for (std::size_t i = id; i < size; i += stride)
-        {
-            dest[i] = src_1[i] - src_2[i];
-        }
-    }
-
-    // Kernel for multiplying two arrays
-    template <typename T>
-    __global__ void mul_kernel(T *dest, T *src_1, T *src_2, u64 size)
-    {
-        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
-        i64 stride = blockDim.x * gridDim.x;
-
-        for (std::size_t i = id; i < size; i += stride)
-        {
-            dest[i] = src_1[i] * src_2[i];
-        }
-    }
-
-    // Kernel for dividing two arrays
-    template <typename T>
-    __global__ void div_kernel(T *dest, T *src_1, T *src_2, u64 size)
-    {
-        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
-        i64 stride = blockDim.x * gridDim.x;
-
-        for (std::size_t i = id; i < size; i += stride)
-        {
-            dest[i] = src_1[i] / src_2[i];
-        }
-    }
-
-    // Kernel to bring more digits into the non-floating poi32 space
-    template <typename T>
-    __global__ void make_float_larger(T *dest, f32 *device_float_src, u64 size, u64 float_shift)
-    {
-        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
-        i64 stride = blockDim.x * gridDim.x;
-
-        for (std::size_t i = id; i < size; i += stride)
-        {
-            dest[i] = static_cast<T>(device_float_src[i] * float_shift);
-        }
-    }
-
-    // Kernel to bring the digits within the max value of the non-floating poi32 space
-    template <typename T>
-    __global__ void bring_random_below_max(T *dest, u64 size, i64 max)
-    {
-        i64 id = blockDim.x * blockIdx.x + threadIdx.x;
-        i64 stride = blockDim.x * gridDim.x;
-
-        for (std::size_t i = id; i < size; i += stride)
-        {
-            dest[i] %= max;
-        }
-    }
-
-    // Kernel to impliment matrix multiplication on nxn matrix
-    template <typename T>
-    __global__ void matrix_mul( T *dest, T *src_1, T *src_2, i32 dest_row, i32 dest_col, i32 src_1_row, i32 src_1_col, i32 src_2_row, i32 src_2_col) {
-        __shared__ T sA[TILE_WIDTH][TILE_WIDTH];
-        __shared__ T sB[TILE_WIDTH][TILE_WIDTH];
-
-        i64 Row = blockDim.y * blockIdx.y + threadIdx.y;
-        i64 Col = blockDim.x * blockIdx.x + threadIdx.x;
-        T val = static_cast<T>(0.0);
-        sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-        sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-
-        for (u64 ph = 0; ph < (((src_1_col - 1) / TILE_WIDTH) + 1); ph++) {
-            if ((Row < src_1_row) && (threadIdx.x + (ph * TILE_WIDTH)) < src_1_col) {
-                sA[threadIdx.y][threadIdx.x] = src_1[(Row * src_1_col) + threadIdx.x + (ph * TILE_WIDTH)];
-            } else {
-                sA[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-            }
-            if (Col < src_2_col && (threadIdx.y + ph * TILE_WIDTH) < src_2_row) {
-                sB[threadIdx.y][threadIdx.x] = src_2[(threadIdx.y + ph * TILE_WIDTH) * src_2_col + Col];
-            } else {
-                sB[threadIdx.y][threadIdx.x] = static_cast<T>(0.0);
-            }
-            __syncthreads();
-
-            for (u64 j = 0; j < TILE_WIDTH; ++j) {
-                val += sA[threadIdx.y][j] * sB[j][threadIdx.x];
-            }
-        }
-        if (Row < dest_row && Col < dest_col) {
-            dest[Row * dest_col + Col] = val;
-        }
+        dest[i] = src_1[i] - src_2[i];
     }
 }
+
+// Kernel for multiplying two arrays
+template <typename _Type> __global__ void mul_kernel(_Type *dest, _Type *src_1, _Type *src_2, u64 size)
+{
+    i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+    i64 stride = blockDim.x * gridDim.x;
+
+    for (std::size_t i = id; i < size; i += stride)
+    {
+        dest[i] = src_1[i] * src_2[i];
+    }
+}
+
+// Kernel for dividing two arrays
+template <typename _Type> __global__ void div_kernel(_Type *dest, _Type *src_1, _Type *src_2, u64 size)
+{
+    i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+    i64 stride = blockDim.x * gridDim.x;
+
+    for (std::size_t i = id; i < size; i += stride)
+    {
+        dest[i] = src_1[i] / src_2[i];
+    }
+}
+
+// Kernel to bring more digits into the non-floating poi32 space
+template <typename _Type>
+__global__ void make_float_larger(_Type *dest, f32 *device_float_src, u64 size, u64 float_shift)
+{
+    i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+    i64 stride = blockDim.x * gridDim.x;
+
+    for (std::size_t i = id; i < size; i += stride)
+    {
+        dest[i] = static_cast<_Type>(device_float_src[i] * float_shift);
+    }
+}
+
+// Kernel to bring the digits within the max value of the non-floating poi32 space
+template <typename _Type> __global__ void bring_random_below_max(_Type *dest, u64 size, i64 max)
+{
+    i64 id = blockDim.x * blockIdx.x + threadIdx.x;
+    i64 stride = blockDim.x * gridDim.x;
+
+    for (std::size_t i = id; i < size; i += stride)
+    {
+        dest[i] %= max;
+    }
+}
+
+// Kernel to impliment matrix multiplication on nxn matrix
+template <typename _Type>
+__global__ void matrix_mul(_Type *dest, _Type *src_1, _Type *src_2, i32 dest_row, i32 dest_col, i32 src_1_row,
+                           i32 src_1_col, i32 src_2_row, i32 src_2_col)
+{
+    __shared__ _Type sA[TILE_WIDTH][TILE_WIDTH];
+    __shared__ _Type sB[TILE_WIDTH][TILE_WIDTH];
+
+    i64 Row = blockDim.y * blockIdx.y + threadIdx.y;
+    i64 Col = blockDim.x * blockIdx.x + threadIdx.x;
+    _Type val = static_cast<_Type>(0.0);
+    sA[threadIdx.y][threadIdx.x] = static_cast<_Type>(0.0);
+    sB[threadIdx.y][threadIdx.x] = static_cast<_Type>(0.0);
+
+    for (u64 ph = 0; ph < (((src_1_col - 1) / TILE_WIDTH) + 1); ph++)
+    {
+        if ((Row < src_1_row) && (threadIdx.x + (ph * TILE_WIDTH)) < src_1_col)
+        {
+            sA[threadIdx.y][threadIdx.x] = src_1[(Row * src_1_col) + threadIdx.x + (ph * TILE_WIDTH)];
+        }
+        else
+        {
+            sA[threadIdx.y][threadIdx.x] = static_cast<_Type>(0.0);
+        }
+        if (Col < src_2_col && (threadIdx.y + ph * TILE_WIDTH) < src_2_row)
+        {
+            sB[threadIdx.y][threadIdx.x] = src_2[(threadIdx.y + ph * TILE_WIDTH) * src_2_col + Col];
+        }
+        else
+        {
+            sB[threadIdx.y][threadIdx.x] = static_cast<_Type>(0.0);
+        }
+        __syncthreads();
+
+        for (u64 j = 0; j < TILE_WIDTH; ++j)
+        {
+            val += sA[threadIdx.y][j] * sB[j][threadIdx.x];
+        }
+    }
+    if (Row < dest_row && Col < dest_col)
+    {
+        dest[Row * dest_col + Col] = val;
+    }
+}
+} // namespace kernel
 
 namespace auxillary
 {
@@ -185,21 +192,20 @@ void unsquish(_DestType **dest, _SrcType *src, std::size_t column, std::size_t r
 
 namespace user_space
 {
-    // Driver code to handle setting up the device and calling the kernel for addition
-    template <typename T>
-    i32 add(T *dest, T *src_1, T *src_2, size_t size_v)
-    {
-        T *device_src_1, *device_src_2, *device_dest;
-        i32  iLen(1024);
+// Driver code to handle setting up the device and calling the kernel for addition
+template <typename _Type> i32 add(_Type *dest, _Type *src_1, _Type *src_2, size_t size_v)
+{
+    _Type *device_src_1, *device_src_2, *device_dest;
+    i32 iLen(1024);
 
-    unsigned long long size = size_v;
+    u64 size = size_v;
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest), sizeof(T) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_1), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_2), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest), sizeof(_Type) * size));
 
-    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(T) * size, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(T) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(_Type) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(_Type) * size, cudaMemcpyHostToDevice));
 
     dim3 block(iLen);
     dim3 grid((size + block.x - 1) / block.x);
@@ -208,7 +214,7 @@ namespace user_space
 
     CUDA_CALL(cudaDeviceSynchronize());
 
-    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(T) * size, cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(_Type) * size, cudaMemcpyDeviceToHost));
 
     CUDA_CALL(cudaFree(device_src_1));
     CUDA_CALL(cudaFree(device_src_2));
@@ -217,19 +223,18 @@ namespace user_space
     return EXIT_SUCCESS;
 }
 
-    // Driver code to handle setting up the device and calling the kernel for subtraction
-    template <typename T>
-    i32 sub(T *dest, T *src_1, T *src_2, u32 size)
-    {
-        T *device_src_1, *device_src_2, *device_dest;
-        i32  iLen(1024);
+// Driver code to handle setting up the device and calling the kernel for subtraction
+template <typename _Type> i32 sub(_Type *dest, _Type *src_1, _Type *src_2, u32 size)
+{
+    _Type *device_src_1, *device_src_2, *device_dest;
+    i32 iLen(1024);
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest), sizeof(T) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_1), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_2), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest), sizeof(_Type) * size));
 
-    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(T) * size, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(T) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(_Type) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(_Type) * size, cudaMemcpyHostToDevice));
 
     dim3 block(iLen);
     dim3 grid((size + block.x - 1) / block.x);
@@ -238,7 +243,7 @@ namespace user_space
 
     CUDA_CALL(cudaDeviceSynchronize());
 
-    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(T) * size, cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(_Type) * size, cudaMemcpyDeviceToHost));
 
     CUDA_CALL(cudaFree(device_src_1));
     CUDA_CALL(cudaFree(device_src_2));
@@ -247,19 +252,18 @@ namespace user_space
     return EXIT_SUCCESS;
 }
 
-    // Driver code to handle setting up the device and calling the kernel for multiplication
-    template <typename T>
-    i32 mul(T *dest, T *src_1, T *src_2, u32 size)
-    {
-        T *device_src_1, *device_src_2, *device_dest;
-        i32  iLen(1024);
+// Driver code to handle setting up the device and calling the kernel for multiplication
+template <typename _Type> i32 mul(_Type *dest, _Type *src_1, _Type *src_2, u32 size)
+{
+    _Type *device_src_1, *device_src_2, *device_dest;
+    i32 iLen(1024);
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest), sizeof(T) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_1), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_2), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest), sizeof(_Type) * size));
 
-    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(T) * size, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(T) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(_Type) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(_Type) * size, cudaMemcpyHostToDevice));
 
     dim3 block(iLen);
     dim3 grid((size + block.x - 1) / block.x);
@@ -268,7 +272,7 @@ namespace user_space
 
     CUDA_CALL(cudaDeviceSynchronize());
 
-    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(T) * size, cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(_Type) * size, cudaMemcpyDeviceToHost));
 
     CUDA_CALL(cudaFree(device_src_1));
     CUDA_CALL(cudaFree(device_src_2));
@@ -277,19 +281,18 @@ namespace user_space
     return EXIT_SUCCESS;
 }
 
-    // Driver code to handle setting up the device and calling the kernel for division
-    template <typename T>
-    i32 div(T *dest, T *src_1, T *src_2, u32 size)
-    {
-        T *device_src_1, *device_src_2, *device_dest;
-        i32  iLen(1024);
+// Driver code to handle setting up the device and calling the kernel for division
+template <typename _Type> i32 div(_Type *dest, _Type *src_1, _Type *src_2, u32 size)
+{
+    _Type *device_src_1, *device_src_2, *device_dest;
+    i32 iLen(1024);
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * size));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest), sizeof(T) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_1), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_2), sizeof(_Type) * size));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest), sizeof(_Type) * size));
 
-    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(T) * size, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(T) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(_Type) * size, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(_Type) * size, cudaMemcpyHostToDevice));
 
     dim3 block(iLen);
     dim3 grid((size + block.x - 1) / block.x);
@@ -298,7 +301,7 @@ namespace user_space
 
     CUDA_CALL(cudaDeviceSynchronize());
 
-    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(T) * size, cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(_Type) * size, cudaMemcpyDeviceToHost));
 
     CUDA_CALL(cudaFree(device_src_1));
     CUDA_CALL(cudaFree(device_src_2));
@@ -307,20 +310,19 @@ namespace user_space
     return EXIT_SUCCESS;
 }
 
-    // Driver code to handle setting up the device and calling the kernel for geberating random numbers
-    template <typename T>
-    i32 generate_random_number(T *dest, u32 size, i32 float_shift, i32 max)
-    {
-        float *random_number_gen_dest;
-        T *device_dest_int;
-        i32  iLen(1024);
+// Driver code to handle setting up the device and calling the kernel for geberating random numbers
+template <typename _Type> i32 generate_random_number(_Type *dest, u32 size, i32 float_shift, i32 max)
+{
+    float *random_number_gen_dest;
+    _Type *device_dest_int;
+    i32 iLen(1024);
 
     curandGenerator_t gen;
     dim3 block(iLen);
     dim3 grid((size + block.x - 1) / block.x);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<float **>(&random_number_gen_dest), sizeof(float) * size))
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest_int), sizeof(T) * size))
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest_int), sizeof(_Type) * size))
 
     CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT))
     CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, time(NULL)))
@@ -331,7 +333,7 @@ namespace user_space
 
     CUDA_CALL(cudaDeviceSynchronize())
 
-    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(T) * size, cudaMemcpyDeviceToHost))
+    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(_Type) * size, cudaMemcpyDeviceToHost))
 
     CUDA_CALL(cudaFree(random_number_gen_dest))
     CUDA_CALL(cudaFree(device_dest_int))
@@ -339,19 +341,18 @@ namespace user_space
     return EXIT_SUCCESS;
 }
 
-    template <typename T>
-    i32 generate_random_number(T *dest, u32 size, i32 float_shift, i32 max, i32 seed)
-    {
-        float *random_number_gen_dest;
-        T *device_dest_int;
-        i32  iLen(1024);
+template <typename _Type> i32 generate_random_number(_Type *dest, u32 size, i32 float_shift, i32 max, i32 seed)
+{
+    float *random_number_gen_dest;
+    _Type *device_dest_int;
+    i32 iLen(1024);
 
     curandGenerator_t gen;
     dim3 block(iLen);
     dim3 grid((size + block.x - 1) / block.x);
 
     CUDA_CALL(cudaMalloc(reinterpret_cast<float **>(&random_number_gen_dest), sizeof(float) * size))
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest_int), sizeof(T) * size))
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest_int), sizeof(_Type) * size))
 
     CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT))
     CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, seed))
@@ -362,7 +363,7 @@ namespace user_space
 
     CUDA_CALL(cudaDeviceSynchronize())
 
-    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(T) * size, cudaMemcpyDeviceToHost))
+    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(_Type) * size, cudaMemcpyDeviceToHost))
 
     CUDA_CALL(cudaFree(random_number_gen_dest))
     CUDA_CALL(cudaFree(device_dest_int))
@@ -372,21 +373,21 @@ namespace user_space
 
 // Driver code to handle setting up the device and calling the kernel for matrix multiplication
 // Matrices already squished into 1d arrays
-template <typename T>
-i32 matrix_mul(T *dest, T *src_1, T *src_2, u32 rows_src_1, u32 columns_src_1,
-               u32 rows_src_2, u32 columns_src_2)
+template <typename _Type>
+i32 matrix_mul(_Type *dest, _Type *src_1, _Type *src_2, u32 rows_src_1, u32 columns_src_1, u32 rows_src_2,
+               u32 columns_src_2)
 {
-    T *device_src_1, *device_src_2, *device_dest;
+    _Type *device_src_1, *device_src_2, *device_dest;
 
-        u64 dest_rows = rows_src_1;
-        u64 dest_columns = columns_src_2;
+    u64 dest_rows = rows_src_1;
+    u64 dest_columns = columns_src_2;
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * rows_src_1 * columns_src_1));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * rows_src_2 * columns_src_2));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest), sizeof(T) * rows_src_1 * columns_src_2));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_1), sizeof(_Type) * rows_src_1 * columns_src_1));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_2), sizeof(_Type) * rows_src_2 * columns_src_2));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest), sizeof(_Type) * rows_src_1 * columns_src_2));
 
-    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(T) * rows_src_1 * columns_src_1, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(T) * rows_src_2 * columns_src_2, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(_Type) * rows_src_1 * columns_src_1, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(_Type) * rows_src_2 * columns_src_2, cudaMemcpyHostToDevice));
 
     dim3 dimBlock(TILE_WIDTH, TILE_WIDTH, 1);
     dim3 dimGrid;
@@ -400,7 +401,7 @@ i32 matrix_mul(T *dest, T *src_1, T *src_2, u32 rows_src_1, u32 columns_src_1,
 
     CUDA_CALL(cudaDeviceSynchronize());
 
-    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(T) * rows_src_1 * columns_src_2, cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(dest, device_dest, sizeof(_Type) * rows_src_1 * columns_src_2, cudaMemcpyDeviceToHost));
 
     CUDA_CALL(cudaFree(device_src_1));
     CUDA_CALL(cudaFree(device_src_2));
@@ -411,27 +412,27 @@ i32 matrix_mul(T *dest, T *src_1, T *src_2, u32 rows_src_1, u32 columns_src_1,
 
 // Driver code to handle setting up the device and calling the kernel for matrix multiplication
 // Matrices are not squished into 1d arrays, squishing will be done in function
-template <typename T>
-i32 matrix_mul(T **dest, T **src_1, T **src_2, u32 rows_src_1, u32 columns_src_1,
-               u32 rows_src_2, u32 columns_src_2)
+template <typename _Type>
+i32 matrix_mul(_Type **dest, _Type **src_1, _Type **src_2, u32 rows_src_1, u32 columns_src_1, u32 rows_src_2,
+               u32 columns_src_2)
 {
-    T *device_src_1, *device_src_2, *device_dest;
+    _Type *device_src_1, *device_src_2, *device_dest;
 
-        u64 dest_rows = rows_src_1;
-        u64 dest_columns = columns_src_2;
+    u64 dest_rows = rows_src_1;
+    u64 dest_columns = columns_src_2;
 
-    T *_dest, *_src_1, *_src_2;
+    _Type *_dest, *_src_1, *_src_2;
 
     auxillary::squish(_dest, dest, dest_rows, dest_columns);
     auxillary::squish(_src_1, src_1, rows_src_1, columns_src_1);
     auxillary::squish(_src_2, src_2, rows_src_2, columns_src_2);
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_1), sizeof(T) * rows_src_1 * columns_src_1));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_src_2), sizeof(T) * rows_src_2 * columns_src_2));
-    CUDA_CALL(cudaMalloc(reinterpret_cast<T **>(&device_dest), sizeof(T) * rows_src_1 * columns_src_2));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_1), sizeof(_Type) * rows_src_1 * columns_src_1));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_src_2), sizeof(_Type) * rows_src_2 * columns_src_2));
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest), sizeof(_Type) * rows_src_1 * columns_src_2));
 
-    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(T) * rows_src_1 * columns_src_1, cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(T) * rows_src_2 * columns_src_2, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_1, src_1, sizeof(_Type) * rows_src_1 * columns_src_1, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(device_src_2, src_2, sizeof(_Type) * rows_src_2 * columns_src_2, cudaMemcpyHostToDevice));
 
     dim3 dimBlock(TILE_WIDTH, TILE_WIDTH, 1);
     dim3 dimGrid;
@@ -445,7 +446,7 @@ i32 matrix_mul(T **dest, T **src_1, T **src_2, u32 rows_src_1, u32 columns_src_1
 
     CUDA_CALL(cudaDeviceSynchronize());
 
-    CUDA_CALL(cudaMemcpy(_dest, device_dest, sizeof(T) * rows_src_1 * columns_src_2, cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(_dest, device_dest, sizeof(_Type) * rows_src_1 * columns_src_2, cudaMemcpyDeviceToHost));
 
     auxillary::unsquish(dest, _dest, dest_rows, dest_columns);
 
@@ -693,7 +694,7 @@ std::string CURAND_CHECK_VAL(curandStatus_t x)
     case 102:
         msg = "CURAND_STATUS_ALLOCATION_FAILED";
     case 103:
-        msg = "CURAND_STATUS_TYPE_ERROR";
+        msg = "CURAND_STATUS _Type _ERROR";
     case 104:
         msg = "CURAND_STATUS_OUT_OF_RANGE";
     case 105:
