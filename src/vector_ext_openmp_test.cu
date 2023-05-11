@@ -1,3 +1,5 @@
+#define USE_OPENMP
+
 #include "vector_ext.cuh"
 
 int main() {
