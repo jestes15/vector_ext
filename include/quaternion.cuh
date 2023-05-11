@@ -15,6 +15,60 @@ enum quaternion_interpolation_method
 template <typename _Type> struct unit_vector
 {
     _Type i_coeff, j_coeff, z_coeff;
+
+    // Unit Vector Output Stream
+    friend std::ostream &operator<<(std::ostream &os, const unit_vector<_Type> &v)
+    {
+        os << std::setprecision(13) << "(" << v.i_coeff << "i + " << v.j_coeff << "j + " << v.z_coeff << "z)"
+           << std::setprecision(4);
+        return os;
+    }
+};
+
+template <typename _Type> struct rotation_vector
+{
+    _Type i_coeff, j_coeff, k_coeff;
+
+    // Rotation Vector Output Stream
+    friend std::ostream &operator<<(std::ostream &os, const rotation_vector<_Type> &v)
+    {
+        os << std::setprecision(13) << "(" << v.i_coeff << "i + " << v.j_coeff << "j + " << v.k_coeff << "k)"
+           << std::setprecision(4);
+        return os;
+    }
+
+    // Rotation Vector Equality Operators
+    bool operator==(const rotation_vector &s) const
+    {
+        return (i_coeff == s.i_coeff && j_coeff == s.j_coeff && k_coeff == s.k_coeff);
+    }
+    bool operator<(const rotation_vector &s) const
+    {
+        return (i_coeff < s.i_coeff && j_coeff < s.j_coeff && k_coeff < s.k_coeff);
+    }
+    bool operator>(const rotation_vector &s) const
+    {
+        return (i_coeff > s.i_coeff && j_coeff > s.j_coeff && k_coeff > s.k_coeff);
+    }
+    bool operator<=(const rotation_vector &s) const
+    {
+        return (i_coeff <= s.i_coeff && j_coeff <= s.j_coeff && k_coeff <= s.k_coeff);
+    }
+    bool operator>=(const rotation_vector &s) const
+    {
+        return (i_coeff >= s.i_coeff && j_coeff >= s.j_coeff && k_coeff >= s.k_coeff);
+    }
+
+    // Rotation Vector Arithmetic Operators
+    rotation_vector<_Type> operator+(const rotation_vector<_Type> &s) const
+    {
+        return rotation_vector<_Type>{i_coeff + s.i_coeff, j_coeff + s.j_coeff, k_coeff + s.k_coeff};
+    }
+
+    rotation_vector<_Type> operator-(const rotation_vector<_Type> &s) const
+    {
+        return rotation_vector<_Type>{i_coeff - s.i_coeff, j_coeff - s.j_coeff, k_coeff - s.k_coeff};
+    }
 };
 
 class quaternion
@@ -92,19 +146,19 @@ class quaternion
     }
 
     // Set methods
-    template <typename _Type> void set_a(const _Type q0) const
+    template <typename _Type> void set_a(const _Type q0)
     {
         this->q0 = q0;
     }
-    template <typename _Type> void set_b(const _Type q1) const
+    template <typename _Type> void set_b(const _Type q1)
     {
         this->q1 = q1;
     }
-    template <typename _Type> void set_c(const _Type q2) const
+    template <typename _Type> void set_c(const _Type q2)
     {
         this->q2 = q2;
     }
-    template <typename _Type> void set_d(const _Type q3) const
+    template <typename _Type> void set_d(const _Type q3)
     {
         this->q3 = q3;
     }
@@ -194,7 +248,7 @@ class quaternion
         return std::sqrt(std::pow(this->q0, 2) + std::pow(this->q1, 2) + std::pow(this->q2, 2) + std::pow(this->q3, 2));
     }
 
-    quaternion inverse()
+    quaternion inverse() const
     {
         f64 fractional_component =
             static_cast<f64>(std::pow(q0, 2) + std::pow(q1, 2) + std::pow(q2, 2) + std::pow(q3, 2));
@@ -202,12 +256,12 @@ class quaternion
                           -q2 * (1.0 / fractional_component), -q3 * (1.0 / fractional_component));
     }
 
-    quaternion normalize()
+    quaternion normalize() const
     {
         return quaternion(q0 / norm(), q1 / norm(), q2 / norm(), q3 / norm());
     }
 
-    quaternion complex_conjugate()
+    quaternion complex_conjugate() const
     {
         return quaternion(q0, -q1, -q2, -q3);
     }
@@ -269,6 +323,48 @@ class quaternion
         return quaternion(std::abs(q0), std::abs(q1), std::abs(q2), std::abs(q3));
     }
 
+    // Quaternion Rotation
+    rotation_vector<double> rotate(const rotation_vector<double> &v, bool normalized = false) const
+    {
+        quaternion temp;
+
+        if (!normalized)
+        {
+            auto temp_loc = this->normalize();
+            temp.set_a(temp_loc.get_a());
+            temp.set_b(temp_loc.get_b());
+            temp.set_c(temp_loc.get_c());
+            temp.set_d(temp_loc.get_d());
+        }
+        else
+        {
+            auto temp_loc = *this;
+            temp.set_a(temp_loc.get_a());
+            temp.set_b(temp_loc.get_b());
+            temp.set_c(temp_loc.get_c());
+            temp.set_d(temp_loc.get_d());
+        }
+
+        std::array<std::array<f64, 3>, 3> rotation_matrix;
+
+        rotation_matrix.at(0).at(0) = 1 - 2 * std::pow(temp.get_c(), 2) - 2 * std::pow(temp.get_d(), 2);
+        rotation_matrix.at(0).at(1) = 2 * (temp.get_b() * temp.get_c() + temp.get_a() * temp.get_d());
+        rotation_matrix.at(0).at(2) = 2 * (temp.get_b() * temp.get_d() - temp.get_a() * temp.get_c());
+        rotation_matrix.at(1).at(0) = 2 * (temp.get_b() * temp.get_c() - temp.get_a() * temp.get_d());
+        rotation_matrix.at(1).at(1) = 1 - 2 * std::pow(temp.get_b(), 2) - 2 * std::pow(temp.get_d(), 2);
+        rotation_matrix.at(1).at(2) = 2 * (temp.get_c() * temp.get_d() + temp.get_a() * temp.get_b());
+        rotation_matrix.at(2).at(0) = 2 * (temp.get_b() * temp.get_d() + temp.get_a() * temp.get_c());
+        rotation_matrix.at(2).at(1) = 2 * (temp.get_c() * temp.get_d() - temp.get_a() * temp.get_b());
+        rotation_matrix.at(2).at(2) = 1 - 2 * std::pow(temp.get_b(), 2) - 2 * std::pow(temp.get_c(), 2);
+
+        rotation_vector<f64> rotated_vector = {
+            rotation_matrix[0][0] * v.i_coeff + rotation_matrix[0][1] * v.j_coeff + rotation_matrix[0][2] * v.k_coeff,
+            rotation_matrix[1][0] * v.i_coeff + rotation_matrix[1][1] * v.j_coeff + rotation_matrix[1][2] * v.k_coeff,
+            rotation_matrix[2][0] * v.i_coeff + rotation_matrix[2][1] * v.j_coeff + rotation_matrix[2][2] * v.k_coeff};
+
+        return rotated_vector;
+    }
+
     // Quaternion Output Stream
     friend std::ostream &operator<<(std::ostream &os, const quaternion &q)
     {
@@ -301,3 +397,14 @@ class quaternion
         return lerp(q, t).normalize();
     }
 };
+
+rotation_vector<double> abs(const rotation_vector<double> &q)
+{
+    rotation_vector<double> r;
+
+    r.i_coeff = std::abs(q.i_coeff);
+    r.j_coeff = std::abs(q.j_coeff);
+    r.k_coeff = std::abs(q.k_coeff);
+
+    return r;
+}

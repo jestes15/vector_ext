@@ -40,7 +40,9 @@ enum tests
     exp,
     natural_log,
     scalar_power,
-    quaternion_power
+    quaternion_power,
+    quaternion_rotate_not_normalized,
+    quaternion_rotate_normalized,
 };
 
 std::map<tests, std::string> test_names = {
@@ -73,6 +75,8 @@ std::map<tests, std::string> test_names = {
     {natural_log, "natural_log"},
     {scalar_power, "scalar_power"},
     {quaternion_power, "quaternion_power"},
+    {quaternion_rotate_not_normalized, "quaternion_rotate_not_normalized"},
+    {quaternion_rotate_normalized, "quaternion_rotate_normalized"},
 };
 
 } // namespace test_quaternion_enum
@@ -118,6 +122,8 @@ class test_quaternion_class
         test_natural_logarithm();
         test_scalar_power();
         test_quaternion_power();
+
+        test_quaternion_rotate_not_normalized();
 
         return results;
     }
@@ -391,7 +397,7 @@ class test_quaternion_class
             this->results[test_quaternion_enum::interpolate_slerp] = ss.str();
             return;
         }
-        else if ((result.value() - expected_result).abs() < this->epsilon)
+        else if ((result.value() - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::interpolate_slerp] = std::nullopt;
         else
         {
@@ -423,7 +429,7 @@ class test_quaternion_class
             this->results[test_quaternion_enum::interpolate_nlerp] = ss.str();
             return;
         }
-        else if ((result.value() - expected_result).abs() < this->epsilon)
+        else if ((result.value() - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::interpolate_nlerp] = std::nullopt;
         else
         {
@@ -455,7 +461,7 @@ class test_quaternion_class
             this->results[test_quaternion_enum::interpolate_lerp] = ss.str();
             return;
         }
-        else if ((result.value() - expected_result).abs() < this->epsilon)
+        else if ((result.value() - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::interpolate_lerp] = std::nullopt;
         else
         {
@@ -474,7 +480,7 @@ class test_quaternion_class
         quaternion expected_result =
             quaternion(0.182574185835055, 0.365148371670111, 0.547722557505166, 0.730296743340221);
 
-        if ((result - expected_result).abs() < this->epsilon)
+        if ((result - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::normalize] = std::nullopt;
         else
         {
@@ -511,7 +517,7 @@ class test_quaternion_class
 
         quaternion expected_result = quaternion(0.402298850574713, 0.0, 0.091954022988506, 0.045977011494253);
 
-        if ((result - expected_result).abs() < this->epsilon)
+        if ((result - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::divide] = std::nullopt;
         else
         {
@@ -529,7 +535,7 @@ class test_quaternion_class
         quaternion expected_result =
             quaternion(1.693922723683299, -0.789559624541559, -1.184339436812338, -1.579119249083118);
 
-        if ((result - expected_result).abs() < this->epsilon)
+        if ((result - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::exp] = std::nullopt;
         else
         {
@@ -547,7 +553,7 @@ class test_quaternion_class
         quaternion expected_result =
             quaternion(1.7005986908311, 0.515190292664085, 0.772785438996128, 1.030380585328170);
 
-        if ((result - expected_result).abs() < this->epsilon)
+        if ((result - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::natural_log] = std::nullopt;
         else
         {
@@ -564,7 +570,7 @@ class test_quaternion_class
         quaternion result = q.pow(2);
         quaternion expected_result = quaternion(-28, 4, 6, 8);
 
-        if ((result - expected_result).abs() < this->epsilon)
+        if ((result - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::scalar_power] = std::nullopt;
         else
         {
@@ -582,7 +588,7 @@ class test_quaternion_class
         quaternion result = q1.pow(q2);
         quaternion expected_result = quaternion(-0.000228445, 5.57689e-05, 8.46271e-05, 8.41402e-05);
 
-        if ((result - expected_result).abs() < this->epsilon)
+        if ((result - expected_result).abs() < this->quaternion_epsilon)
             this->results[test_quaternion_enum::quaternion_power] = std::nullopt;
         else
         {
@@ -592,7 +598,28 @@ class test_quaternion_class
             this->results[test_quaternion_enum::quaternion_power] = ss.str();
         }
     }
-    quaternion epsilon = quaternion(0.00001, 0.00001, 0.00001, 0.00001);
+
+    void test_quaternion_rotate_not_normalized()
+    {
+        quaternion q = quaternion(1, 2, 3, 4);
+        rotation_vector<double> v = rotation_vector<double>{1.0, 2.0, 3.0};
+
+        rotation_vector<double> result = q.rotate(v);
+        rotation_vector<double> expected_result =
+            rotation_vector<double>{1.666666666666667, 2.266666666666667, 2.466666666666667};
+
+        if (abs(result - expected_result) < this->rotation_epsilon)
+            this->results[test_quaternion_enum::quaternion_rotate_not_normalized] = std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Testing " << test_quaternion_enum::test_names[test_quaternion_enum::quaternion_rotate_not_normalized]
+               << " failed. Expected: " << expected_result << " Got: " << result;
+            this->results[test_quaternion_enum::quaternion_rotate_not_normalized] = ss.str();
+        }
+    }
+    quaternion quaternion_epsilon = quaternion(0.00001, 0.00001, 0.00001, 0.00001);
+    rotation_vector<double> rotation_epsilon = rotation_vector<double>{0.00001, 0.00001, 0.00001};
 };
 } // namespace test_quaternion
 
