@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VECTOR_EXT_HPP
+#define VECTOR_EXT_HPP
 
 #include <cmath>
 #include <functional>
@@ -9,17 +10,15 @@
 #include <string>
 #include <vector>
 
-// TODO : Finish comments for all functions
+#include "types.cuh"
 
-#if __cplusplus > 201703L
-#include <exception>
-#elif defined(USE_CUDA)
-#include "kernel_impl.cuh"
-#define NO_EXEC
+#if defined(USE_EXECUTION_POLICY)
+#include <execution>
 #endif
 
-using cll = const long long;
-using ll = long long;
+#if defined(USE_CUDA)
+#include "kernel_impl.cuh"
+#endif
 
 constexpr i32 MAX_i32 = std::numeric_limits<int>::max();
 
@@ -140,7 +139,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     }
 
   protected:
-    static auto resize_check(cll n)
+    static auto resize_check(const i64 n)
     {
         if (n < 0)
         {
@@ -148,7 +147,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             throw std::domain_error(err);
         }
     }
-    auto range_check(cll n) const
+    auto range_check(const i64 n) const
     {
         if (static_cast<unsigned long long>(abs(n)) >= this->size())
         {
@@ -156,7 +155,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             throw std::out_of_range(err);
         }
     }
-    static auto const_range_check(cll n, cll size)
+    static auto const_range_check(const i64 n, const i64 size)
     {
         if (std::abs(n) >= size)
         {
@@ -164,7 +163,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             throw std::out_of_range(err);
         }
     }
-    static auto const_pure_val_range_check(cll n, cll size)
+    static auto const_pure_val_range_check(const i64 n, const i64 size)
     {
         if (n >= size)
         {
@@ -172,19 +171,19 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             throw std::out_of_range(err);
         }
     }
-    static auto nothrow_const_range_check(cll n, cll size) noexcept
+    static auto nothrow_const_range_check(const i64 n, const i64 size) noexcept
     {
         if (std::abs(n) >= size)
             return false;
         return true;
     }
-    static auto nothrow_pure_val_range_check(cll n, cll size) noexcept
+    static auto nothrow_pure_val_range_check(const i64 n, const i64 size) noexcept
     {
         if (n >= size)
             return false;
         return true;
     }
-    auto range_check_plus_one(cll n) const
+    auto range_check_plus_one(const i64 n) const
     {
         if (static_cast<long int>(std::abs(n)) >= static_cast<long int>(this->size()) + 1)
         {
@@ -192,7 +191,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             throw std::out_of_range(err);
         }
     }
-    [[nodiscard]] auto get_true_place(cll n) const noexcept
+    [[nodiscard]] auto get_true_place(const i64 n) const noexcept
     {
         if (std::abs(n) == n)
             return n;
@@ -263,16 +262,13 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         size_check(*this, vector_obj);
         vector_ext<_Type> ret_vec(this->size());
 
-#if !defined(_OPENMP) && !defined(NO_EXEC)
+#if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
                        [](_Type &a, _Type &b) { return a + b; });
-#elif defined(_OPENMP)
-#pragma omp parallel for schedule(guided)
-        for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-            ret_vec.at(i) = this->at(i) + vector_obj.at(i);
 #elif defined(USE_CUDA)
         user_space::add(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
 #else
+#pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
             ret_vec.at(i) = this->at(i) + vector_obj.at(i);
 #endif
@@ -284,16 +280,13 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         size_check(*this, vector_obj);
         vector_ext<_Type> ret_vec(this->size());
 
-#if !defined(_OPENMP) && !defined(NO_EXEC)
+#if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
                        [](_Type &a, _Type &b) { return a - b; });
-#elif defined(_OPENMP)
-#pragma omp parallel for schedule(guided)
-        for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-            ret_vec.at(i) = this->at(i) - vector_obj.at(i);
 #elif defined(USE_CUDA)
         user_space::sub(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
 #else
+#pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
             ret_vec.at(i) = this->at(i) - vector_obj.at(i);
 #endif
@@ -305,16 +298,13 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         size_check(*this, vector_obj);
         vector_ext<_Type> ret_vec(this->size());
 
-#if !defined(_OPENMP) && !defined(NO_EXEC)
+#if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
                        [](_Type &a, _Type &b) { return a * b; });
-#elif defined(_OPENMP)
-#pragma omp parallel for schedule(guided)
-        for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-            ret_vec.at(i) = this->at(i) * vector_obj.at(i);
 #elif defined(USE_CUDA)
         user_space::mul(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
 #else
+#pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
             ret_vec.at(i) = this->at(i) * vector_obj.at(i);
 #endif
@@ -329,16 +319,13 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
 
         size_check(*this, vector_obj);
         vector_ext<_Type> ret_vec(this->size());
-#if !defined(_OPENMP) && !defined(NO_EXEC)
+#if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
                        [](_Type &a, _Type &b) { return a / b; });
-#elif defined(_OPENMP)
-#pragma omp parallel for schedule(guided)
-        for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
-            ret_vec.at(i) = this->at(i) / vector_obj.at(i);
 #elif defined(USE_CUDA)
         user_space::div(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
 #else
+#pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
             ret_vec.at(i) = this->at(i) / vector_obj.at(i);
 #endif
@@ -358,6 +345,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         *this = new_array;
         return copy;
     }
+
     auto operator++(int) -> vector_ext<_Type> &
     {
         this->resize(this->size() + 1);
@@ -450,9 +438,9 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
 
     template <typename _Function> auto generate_random_list_lam(const _Function &function)
     {
-#if !defined(NO_EXEC) && !defined(_OPENMP)
+#if defined(USE_EXECUTION_POLICY)
         std::for_each(std::execution::par, this->begin(), this->end(), function);
-#elif defined(_OPENMP)
+#elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
@@ -463,7 +451,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             function(i);
 #endif
     }
-    auto generate_random_list_resize(cll length, cll ax0 = -300, cll bx0 = 300)
+    auto generate_random_list_resize(const i64 length, const i64 ax0 = -300, const i64 bx0 = 300)
     {
         resize_check(length);
         this->resize(length);
@@ -471,12 +459,12 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         std::random_device gen;
         std::uniform_int_distribution<int> dist(ax0, bx0);
 
-#if !defined(NO_EXEC) && !defined(_OPENMP)
+#if defined(USE_EXECUTION_POLICY)
         std::for_each(std::execution::par, this->begin(), this->end(), [&](_Type &n) {
             auto val = static_cast<_Type>(dist(gen) * dist(gen));
             n = val ? val : 1;
         });
-#elif defined(_OPENMP)
+#elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
@@ -490,17 +478,17 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         });
 #endif
     }
-    auto generate_random_list(cll ax0 = -300, cll bx0 = 300)
+    auto generate_random_list(const i64 ax0 = -300, const i64 bx0 = 300)
     {
         std::random_device gen;
         std::uniform_int_distribution<int> dist(ax0, bx0);
 
-#if !defined(NO_EXEC) && !defined(_OPENMP)
+#if defined(USE_EXECUTION_POLICY)
         std::for_each(std::execution::par, this->begin(), this->end(), [&](_Type &n) {
             auto val = static_cast<_Type>(dist(gen) * dist(gen));
             n = val ? val : 1;
         });
-#elif defined(_OPENMP)
+#elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
@@ -514,17 +502,17 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         });
 #endif
     }
-    auto generate_positive_random_list(cll ax0 = -300, cll bx0 = 300)
+    auto generate_positive_random_list(const i64 ax0 = -300, const i64 bx0 = 300)
     {
         std::random_device gen;
         std::uniform_int_distribution<int> dist(ax0, bx0);
 
-#if !defined(NO_EXEC) && !defined(_OPENMP)
+#if defined(USE_EXECUTION_POLICY)
         std::for_each(std::execution::par, this->begin(), this->end(), [&](_Type &n) {
             auto val = static_cast<_Type>(std::abs(dist(gen) * dist(gen)));
             n = val ? val : 1;
         });
-#elif defined(_OPENMP)
+#elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
@@ -550,9 +538,9 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     {
         size_check(*this, dest);
 
-#if !defined(NO_EXEC) && !defined(_OPENMP)
+#if defined(USE_EXECUTION_POLICY)
         std::copy(std::execution::par, this->begin(), this->end(), dest.begin());
-#elif defined(_OPENMP)
+#elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
@@ -564,3 +552,5 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     }
 }; // class vector_ext
 } // namespace std_vec
+
+#endif // VECTOR_EXT_HPP

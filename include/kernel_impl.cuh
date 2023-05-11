@@ -1,4 +1,5 @@
-#pragma once
+#ifndef KERNEL_IMPL
+#define KERNEL_IMPL
 
 #include <iostream>
 
@@ -717,3 +718,5 @@ std::string CURAND_CHECK_VAL(curandStatus_t x)
     return msg;
 }
 } // namespace cuda_checks
+
+#endif // KERNEL_IMPL

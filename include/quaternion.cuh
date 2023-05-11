@@ -1,3 +1,6 @@
+#ifndef QUATERNION_HPP
+#define QUATERNION_HPP
+
 #include <array>
 #include <iomanip>
 #include <iostream>
@@ -408,3 +411,5 @@ rotation_vector<double> abs(const rotation_vector<double> &q)
 
     return r;
 }
+
+#endif // QUATERNION_HPP

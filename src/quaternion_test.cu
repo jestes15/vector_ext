@@ -618,6 +618,7 @@ class test_quaternion_class
             this->results[test_quaternion_enum::quaternion_rotate_not_normalized] = ss.str();
         }
     }
+    
     quaternion quaternion_epsilon = quaternion(0.00001, 0.00001, 0.00001, 0.00001);
     rotation_vector<double> rotation_epsilon = rotation_vector<double>{0.00001, 0.00001, 0.00001};
 };
