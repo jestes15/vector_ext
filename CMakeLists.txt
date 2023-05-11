@@ -19,14 +19,14 @@ set_target_properties(quaternion_test PROPERTIES CUDA_ARCHITECTURES "72")
 target_link_libraries(quaternion_test)
 
 # vector_ext tests
-add_executable(vector_ext_test_cuda src/vector_ext_test.cu)
-set_target_properties(vector_ext_test PROPERTIES CUDA_ARCHITECTURES "72")
-target_link_libraries(vector_ext_test CUDA::curand TBB::tbb)
+add_executable(vector_ext_test_cuda src/vector_ext_cuda_test.cu)
+set_target_properties(vector_ext_test_cuda PROPERTIES CUDA_ARCHITECTURES "72")
+target_link_libraries(vector_ext_test_cuda CUDA::curand)
 
-add_executable(vector_ext_test_openmp src/vector_ext_test.cu)
-set_target_properties(vector_ext_test PROPERTIES CUDA_ARCHITECTURES "72")
-target_link_libraries(vector_ext_test)
+add_executable(vector_ext_test_openmp src/vector_ext_openmp_test.cu)
+set_target_properties(vector_ext_test_openmp PROPERTIES CUDA_ARCHITECTURES "72")
+target_link_libraries(vector_ext_test_openmp OpenMP::OpenMP_CXX)
 
-add_executable(vector_ext_test_execution src/vector_ext_test.cu)
-set_target_properties(vector_ext_test PROPERTIES CUDA_ARCHITECTURES "72")
-target_link_libraries(vector_ext_test CUDA::curand)
+add_executable(vector_ext_test_execution src/vector_ext_execution_policy_test.cu)
+set_target_properties(vector_ext_test_execution PROPERTIES CUDA_ARCHITECTURES "72")
+target_link_libraries(vector_ext_test_execution TBB::tbb)
