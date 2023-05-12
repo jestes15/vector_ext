@@ -1,6 +1,7 @@
 #ifndef KERNEL_IMPL
 #define KERNEL_IMPL
 
+#include <array>
 #include <iostream>
 
 #include "types.cuh"
@@ -193,8 +194,10 @@ void unsquish(_DestType **dest, _SrcType *src, std::size_t column, std::size_t r
 
 namespace user_space
 {
+namespace
+{
 // Driver code to handle setting up the device and calling the kernel for addition
-template <typename _Type> i32 add(_Type *dest, _Type *src_1, _Type *src_2, size_t size_v)
+template <typename _Type> i32 add_raw(_Type *dest, _Type *src_1, _Type *src_2, std::size_t size_v)
 {
     _Type *device_src_1, *device_src_2, *device_dest;
     i32 iLen(1024);
@@ -225,7 +228,7 @@ template <typename _Type> i32 add(_Type *dest, _Type *src_1, _Type *src_2, size_
 }
 
 // Driver code to handle setting up the device and calling the kernel for subtraction
-template <typename _Type> i32 sub(_Type *dest, _Type *src_1, _Type *src_2, u32 size)
+template <typename _Type> i32 sub_raw(_Type *dest, _Type *src_1, _Type *src_2, std::size_t size)
 {
     _Type *device_src_1, *device_src_2, *device_dest;
     i32 iLen(1024);
@@ -254,7 +257,7 @@ template <typename _Type> i32 sub(_Type *dest, _Type *src_1, _Type *src_2, u32 s
 }
 
 // Driver code to handle setting up the device and calling the kernel for multiplication
-template <typename _Type> i32 mul(_Type *dest, _Type *src_1, _Type *src_2, u32 size)
+template <typename _Type> i32 mul_raw(_Type *dest, _Type *src_1, _Type *src_2, std::size_t size)
 {
     _Type *device_src_1, *device_src_2, *device_dest;
     i32 iLen(1024);
@@ -283,7 +286,7 @@ template <typename _Type> i32 mul(_Type *dest, _Type *src_1, _Type *src_2, u32 s
 }
 
 // Driver code to handle setting up the device and calling the kernel for division
-template <typename _Type> i32 div(_Type *dest, _Type *src_1, _Type *src_2, u32 size)
+template <typename _Type> i32 div_raw(_Type *dest, _Type *src_1, _Type *src_2, std::size_t size)
 {
     _Type *device_src_1, *device_src_2, *device_dest;
     i32 iLen(1024);
@@ -310,9 +313,58 @@ template <typename _Type> i32 div(_Type *dest, _Type *src_1, _Type *src_2, u32 s
 
     return EXIT_SUCCESS;
 }
+} // namespace
+
+template <typename _Type, std::size_t size>
+i32 add(std::array<_Type, size> &dest, std::array<_Type, size> &src_1, std::array<_Type, size> &src_2)
+{
+    std::size_t free_vram, total_vram;
+    cudaMemGetInfo(&free_vram, &total_vram);
+
+    if (free_vram < (sizeof(_Type) * size * 3))
+        return EXIT_FAILURE;
+    
+    return add_raw(dest.data(), src_1.data(), src_2.data(), size);
+}
+
+template <typename _Type, std::size_t size>
+i32 sub(std::array<_Type, size> &dest, std::array<_Type, size> &src_1, std::array<_Type, size> &src_2)
+{
+    std::size_t free_vram, total_vram;
+    cudaMemGetInfo(&free_vram, &total_vram);
+
+    if (free_vram < (sizeof(_Type) * size * 3))
+        return EXIT_FAILURE;
+
+    return sub_raw(dest.data(), src_1.data(), src_2.data(), size);
+}
+
+template <typename _Type, std::size_t size>
+i32 mul(std::array<_Type, size> &dest, std::array<_Type, size> &src_1, std::array<_Type, size> &src_2)
+{
+    std::size_t free_vram, total_vram;
+    cudaMemGetInfo(&free_vram, &total_vram);
+
+    if (free_vram < (sizeof(_Type) * size * 3))
+        return EXIT_FAILURE;
+
+    return mul_raw(dest.data(), src_1.data(), src_2.data(), size);
+}
+
+template <typename _Type, std::size_t size>
+i32 div(std::array<_Type, size> &dest, std::array<_Type, size> &src_1, std::array<_Type, size> &src_2)
+{
+    std::size_t free_vram, total_vram;
+    cudaMemGetInfo(&free_vram, &total_vram);
+
+    if (free_vram < (sizeof(_Type) * size * 3))
+        return EXIT_FAILURE;
+
+    return div_raw(dest.data(), src_1.data(), src_2.data(), size);
+}
 
 // Driver code to handle setting up the device and calling the kernel for geberating random numbers
-template <typename _Type> i32 generate_random_number(_Type *dest, u32 size, i32 float_shift, i32 max)
+template <typename _Type> i32 generate_random_number(_Type *dest, std::size_t size, i32 float_shift, i32 max)
 {
     float *random_number_gen_dest;
     _Type *device_dest_int;

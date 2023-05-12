@@ -18,7 +18,6 @@ add_executable(quaternion_test src/quaternion_test.cu)
 set_target_properties(quaternion_test PROPERTIES CUDA_ARCHITECTURES "72")
 target_link_libraries(quaternion_test)
 
-# vector_ext tests
 add_executable(vector_ext_test_cuda src/vector_ext_cuda_test.cu)
 set_target_properties(vector_ext_test_cuda PROPERTIES CUDA_ARCHITECTURES "72")
 target_link_libraries(vector_ext_test_cuda CUDA::curand)
