@@ -313,6 +313,67 @@ template <typename _Type> i32 div_raw(_Type *dest, _Type *src_1, _Type *src_2, s
 
     return EXIT_SUCCESS;
 }
+
+template <typename _Type> i32 generate_random_number_raw(_Type *dest, std::size_t size, i32 float_shift, i32 max)
+{
+    float *random_number_gen_dest;
+    _Type *device_dest_int;
+    i32 iLen(1024);
+
+    curandGenerator_t gen;
+    dim3 block(iLen);
+    dim3 grid((size + block.x - 1) / block.x);
+
+    CUDA_CALL(cudaMalloc(reinterpret_cast<float **>(&random_number_gen_dest), sizeof(float) * size))
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest_int), sizeof(_Type) * size))
+
+    CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT))
+    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, time(NULL)))
+    CURAND_CALL(curandGenerateUniform(gen, random_number_gen_dest, size))
+
+    kernel::make_float_larger<<<grid, block>>>(device_dest_int, random_number_gen_dest, size, float_shift);
+    kernel::bring_random_below_max<<<grid, block>>>(device_dest_int, size, max);
+
+    CUDA_CALL(cudaDeviceSynchronize())
+
+    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(_Type) * size, cudaMemcpyDeviceToHost))
+
+    CUDA_CALL(cudaFree(random_number_gen_dest))
+    CUDA_CALL(cudaFree(device_dest_int))
+
+    return EXIT_SUCCESS;
+}
+template <typename _Type>
+i32 generate_random_number_raw(_Type *dest, std::size_t size, i32 float_shift, i32 max, i32 seed)
+{
+    float *random_number_gen_dest;
+    _Type *device_dest_int;
+    i32 iLen(1024);
+
+    curandGenerator_t gen;
+    dim3 block(iLen);
+    dim3 grid((size + block.x - 1) / block.x);
+
+    CUDA_CALL(cudaMalloc(reinterpret_cast<float **>(&random_number_gen_dest), sizeof(float) * size))
+    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest_int), sizeof(_Type) * size))
+
+    CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT))
+    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, seed))
+    CURAND_CALL(curandGenerateUniform(gen, random_number_gen_dest, size))
+
+    kernel::make_float_larger<<<grid, block>>>(device_dest_int, random_number_gen_dest, size, float_shift);
+    kernel::bring_random_below_max<<<grid, block>>>(device_dest_int, size, max);
+
+    CUDA_CALL(cudaDeviceSynchronize())
+
+    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(_Type) * size, cudaMemcpyDeviceToHost))
+
+    CUDA_CALL(cudaFree(random_number_gen_dest))
+    CUDA_CALL(cudaFree(device_dest_int))
+
+    return EXIT_SUCCESS;
+}
+
 } // namespace
 
 template <typename _Type, std::size_t size>
@@ -323,7 +384,7 @@ i32 add(std::array<_Type, size> &dest, std::array<_Type, size> &src_1, std::arra
 
     if (free_vram < (sizeof(_Type) * size * 3))
         return EXIT_FAILURE;
-    
+
     return add_raw(dest.data(), src_1.data(), src_2.data(), size);
 }
 
@@ -364,64 +425,28 @@ i32 div(std::array<_Type, size> &dest, std::array<_Type, size> &src_1, std::arra
 }
 
 // Driver code to handle setting up the device and calling the kernel for geberating random numbers
-template <typename _Type> i32 generate_random_number(_Type *dest, std::size_t size, i32 float_shift, i32 max)
+template <typename _Type, std::size_t size>
+i32 generate_random_number(std::array<_Type, size> dest, i32 float_shift, i32 max)
 {
-    float *random_number_gen_dest;
-    _Type *device_dest_int;
-    i32 iLen(1024);
+    std::size_t free_vram, total_vram;
+    cudaMemGetInfo(&free_vram, &total_vram);
 
-    curandGenerator_t gen;
-    dim3 block(iLen);
-    dim3 grid((size + block.x - 1) / block.x);
+    if (free_vram < (sizeof(_Type) * size))
+        return EXIT_FAILURE;
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<float **>(&random_number_gen_dest), sizeof(float) * size))
-    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest_int), sizeof(_Type) * size))
-
-    CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT))
-    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, time(NULL)))
-    CURAND_CALL(curandGenerateUniform(gen, random_number_gen_dest, size))
-
-    kernel::make_float_larger<<<grid, block>>>(device_dest_int, random_number_gen_dest, size, float_shift);
-    kernel::bring_random_below_max<<<grid, block>>>(device_dest_int, size, max);
-
-    CUDA_CALL(cudaDeviceSynchronize())
-
-    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(_Type) * size, cudaMemcpyDeviceToHost))
-
-    CUDA_CALL(cudaFree(random_number_gen_dest))
-    CUDA_CALL(cudaFree(device_dest_int))
-
-    return EXIT_SUCCESS;
+    return generate_random_number_raw(dest.data(), size, float_shift, max);
 }
 
-template <typename _Type> i32 generate_random_number(_Type *dest, u32 size, i32 float_shift, i32 max, i32 seed)
+template <typename _Type, std::size_t size>
+i32 generate_random_number(std::array<_Type, size> dest, i32 float_shift, i32 max, i32 seed)
 {
-    float *random_number_gen_dest;
-    _Type *device_dest_int;
-    i32 iLen(1024);
+    std::size_t free_vram, total_vram;
+    cudaMemGetInfo(&free_vram, &total_vram);
 
-    curandGenerator_t gen;
-    dim3 block(iLen);
-    dim3 grid((size + block.x - 1) / block.x);
+    if (free_vram < (sizeof(_Type) * size))
+        return EXIT_FAILURE;
 
-    CUDA_CALL(cudaMalloc(reinterpret_cast<float **>(&random_number_gen_dest), sizeof(float) * size))
-    CUDA_CALL(cudaMalloc(reinterpret_cast<_Type **>(&device_dest_int), sizeof(_Type) * size))
-
-    CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT))
-    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, seed))
-    CURAND_CALL(curandGenerateUniform(gen, random_number_gen_dest, size))
-
-    kernel::make_float_larger<<<grid, block>>>(device_dest_int, random_number_gen_dest, size, float_shift);
-    kernel::bring_random_below_max<<<grid, block>>>(device_dest_int, size, max);
-
-    CUDA_CALL(cudaDeviceSynchronize())
-
-    CUDA_CALL(cudaMemcpy(dest, device_dest_int, sizeof(_Type) * size, cudaMemcpyDeviceToHost))
-
-    CUDA_CALL(cudaFree(random_number_gen_dest))
-    CUDA_CALL(cudaFree(device_dest_int))
-
-    return EXIT_SUCCESS;
+    return generate_random_number_raw(dest.data(), size, float_shift, max, seed);
 }
 
 // Driver code to handle setting up the device and calling the kernel for matrix multiplication

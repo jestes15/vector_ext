@@ -201,10 +201,21 @@ class test_kernel_implementation_class
 
     void test_generate_random_number_user_space()
     {
-        // std::cout << "test_generate_random_number_user_space" << std::endl;
-        std::stringstream ss;
-        ss << "test_generate_random_number_user_space" << std::endl;
-        results[test_kernel_implementations_enum::tests::generate_random_number_user_space] = ss.str();
+        std::array<int, 5> first_array = {};
+        std::array<int, 5> second_array = {};
+
+        std_vec::user_space::generate_random_number(first_array, 5, 10);
+        std_vec::user_space::generate_random_number(second_array, 5, 10);
+
+        if (!check_1d_array_result(first_array, second_array))
+            this->results[test_kernel_implementations_enum::tests::div_user_space] = std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Result of addition between " << print_1d_array(left_array) << " and " << print_1d_array(right_array)
+               << " is " << print_1d_array(result) << " but expected " << print_1d_array(expected_result) << std::endl;
+            this->results[test_kernel_implementations_enum::tests::div_user_space] = ss.str();
+        }
     }
 
     void test_generate_random_number_user_space_with_seed()
@@ -241,14 +252,14 @@ int main()
     for (auto const &result : results)
     {
         if (result.second.has_value())
-            std::cout << "Test "
+            std::cout << "\033[31mTest "
                       << test_kernel_implementations::test_kernel_implementations_enum::test_names[result.first]
-                      << " failed: " << result.second.value() << std::endl;
+                      << " failed: " << result.second.value() << "\033[0m" << std::endl;
         else
         {
-            std::cout << "Test "
+            std::cout << "\033[32mTest "
                       << test_kernel_implementations::test_kernel_implementations_enum::test_names[result.first]
-                      << " passed" << std::endl;
+                      << " passed\033[0m" << std::endl;
         }
     }
 }
