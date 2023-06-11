@@ -212,8 +212,8 @@ class test_kernel_implementation_class
         else
         {
             std::stringstream ss;
-            ss << "Result of addition between " << print_1d_array(left_array) << " and " << print_1d_array(right_array)
-               << " is " << print_1d_array(result) << " but expected " << print_1d_array(expected_result) << std::endl;
+            ss << "Arrays " << print_1d_array(first_array) << " and " << print_1d_array(second_array)
+               << " are the same " << std::endl;
             this->results[test_kernel_implementations_enum::tests::div_user_space] = ss.str();
         }
     }
