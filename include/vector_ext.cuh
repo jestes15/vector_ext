@@ -20,25 +20,24 @@
 #include "kernel_impl.cuh"
 #endif
 
-constexpr i32 MAX_i32 = std::numeric_limits<int>::max();
-
 namespace std_vec
 {
-template <typename _Type> class vector_ext : public std::vector<_Type>
+template <typename Type_>
+class vector_ext : public std::vector<Type_>
 {
   private:
     /* Calculates the depth limit given the size of a vector
      * Usage: depth_limit(n) where n is the size of the vector
      */
-    auto depth_limit(const long long size)
+    auto depth_limit(const i64 size)
     {
-        return static_cast<long long>(2 * floor(log(size)));
+        return static_cast<i64>(2 * floor(log(static_cast<f64>(size))));
     }
 
     /* Swaps a and b
      * Usage: swap(*i, *j) where i and j are two variables
      */
-    auto swap(_Type &a, _Type &b)
+    auto swap(Type_ &a, Type_ &b)
     {
         auto temp = std::move(a);
         a = std::move(b);
@@ -48,7 +47,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     /* Finds the partition index for quick sort
      * Usage: partition_iterator(std::begin(vector), std::end(vector), std::less<>())
      */
-    template <typename _Iter, typename Compare> auto partition_iterator(_Iter first, _Iter last, Compare comp)
+    template <typename Iter_, typename Compare> auto partition_iterator(Iter_ first, Iter_ last, Compare comp)
     {
         auto pivot = std::prev(last, 1);
         auto i = first;
@@ -66,7 +65,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     /* Sorts vector using quicksort
      * Usage: _quick_sort(std::begin(vector), std::end(vector), std::less<>())
      */
-    template <typename _Iter, typename Compare> auto _quick_sort(_Iter first, _Iter last, Compare comp) -> void
+    template <typename Iter_, typename Compare> auto _quick_sort(Iter_ first, Iter_ last, Compare comp) -> void
     {
         if (std::distance(first, last) > 1)
         {
@@ -79,8 +78,8 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     /* Driver for merge sort
      * Usage: mergesortInternal(std::begin(vector), std::end(vector), std::less<>(), std::begin(buffer))
      */
-    template <typename _Iter, typename Compare, typename buff>
-    void mergesortInternal(const _Iter first, const _Iter last, const Compare comp, const buff firstMerge)
+    template <typename Iter_, typename Compare, typename buff>
+    void mergesortInternal(const Iter_ first, const Iter_ last, const Compare comp, const buff firstMerge)
     {
         const std::size_t n = last - first;
 
@@ -109,7 +108,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     /* Driver for heap sort, std::make_heap is not required before use
      * Usage: _heap_sort(std::begin(vector), std::end(vector), std::less<>())
      */
-    template <typename _Iter, class Compare> inline auto _heap_sort(_Iter first, _Iter last, const Compare comp)
+    template <typename Iter_, class Compare> inline auto _heap_sort(Iter_ first, Iter_ last, const Compare comp)
     {
         std::make_heap(first, last, comp);
         for (; last - first >= 2; last--)
@@ -119,7 +118,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     /* Driver for insertion sort
      * Usage: _insertion_sort(std::begin(vector), std::end(vector), std::less<>())
      */
-    template <typename _Iter, typename Compare> auto _insertion_sort(_Iter begin, _Iter end, Compare comp)
+    template <typename Iter_, typename Compare> auto _insertion_sort(Iter_ begin, Iter_ end, Compare comp)
     {
         for (auto it = begin + 1; it != end; ++it)
         {
@@ -197,7 +196,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             return n;
         return static_cast<int>(this->size()) + n;
     }
-    static auto size_check(vector_ext<_Type> &vec1, vector_ext<_Type> &vec2)
+    static auto size_check(vector_ext<Type_> &vec1, vector_ext<Type_> &vec2)
     {
         if (vec1.size() != vec2.size())
         {
@@ -208,65 +207,65 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
 
   public:
     // Specialization
-    using std::vector<_Type>::vector;
+    using std::vector<Type_>::vector;
 
     // Member Functions
-    using std::vector<_Type>::operator=;
-    using std::vector<_Type>::assign;
-    using std::vector<_Type>::get_allocator;
+    using std::vector<Type_>::operator=;
+    using std::vector<Type_>::assign;
+    using std::vector<Type_>::get_allocator;
 
     // Element Access
-    using std::vector<_Type>::operator[];
-    using std::vector<_Type>::front;
-    using std::vector<_Type>::back;
-    using std::vector<_Type>::data;
+    using std::vector<Type_>::operator[];
+    using std::vector<Type_>::front;
+    using std::vector<Type_>::back;
+    using std::vector<Type_>::data;
 
     // Iterators
-    using std::vector<_Type>::begin;
-    using std::vector<_Type>::cbegin;
-    using std::vector<_Type>::end;
-    using std::vector<_Type>::cend;
-    using std::vector<_Type>::rbegin;
-    using std::vector<_Type>::crbegin;
-    using std::vector<_Type>::rend;
-    using std::vector<_Type>::crend;
+    using std::vector<Type_>::begin;
+    using std::vector<Type_>::cbegin;
+    using std::vector<Type_>::end;
+    using std::vector<Type_>::cend;
+    using std::vector<Type_>::rbegin;
+    using std::vector<Type_>::crbegin;
+    using std::vector<Type_>::rend;
+    using std::vector<Type_>::crend;
 
     // Capacity
-    using std::vector<_Type>::empty;
-    using std::vector<_Type>::size;
-    using std::vector<_Type>::max_size;
-    using std::vector<_Type>::reserve;
-    using std::vector<_Type>::capacity;
-    using std::vector<_Type>::shrink_to_fit;
+    using std::vector<Type_>::empty;
+    using std::vector<Type_>::size;
+    using std::vector<Type_>::max_size;
+    using std::vector<Type_>::reserve;
+    using std::vector<Type_>::capacity;
+    using std::vector<Type_>::shrink_to_fit;
 
     // Modifiers
-    using std::vector<_Type>::clear;
-    using std::vector<_Type>::insert;
-    using std::vector<_Type>::emplace;
-    using std::vector<_Type>::erase;
-    using std::vector<_Type>::push_back;
-    using std::vector<_Type>::emplace_back;
-    using std::vector<_Type>::pop_back;
-    using std::vector<_Type>::resize;
-    using std::vector<_Type>::swap;
+    using std::vector<Type_>::clear;
+    using std::vector<Type_>::insert;
+    using std::vector<Type_>::emplace;
+    using std::vector<Type_>::erase;
+    using std::vector<Type_>::push_back;
+    using std::vector<Type_>::emplace_back;
+    using std::vector<Type_>::pop_back;
+    using std::vector<Type_>::resize;
+    using std::vector<Type_>::swap;
 
-    [[nodiscard]] auto at(const long long n) -> _Type &
+    auto at(const long long n) -> Type_ &
     {
         range_check(n);
         auto num = get_true_place(n);
         return (*this)[num];
     }
 
-    auto operator+(vector_ext<_Type> &vector_obj) -> vector_ext<_Type>
+    auto operator+(vector_ext<Type_> &vector_obj) -> vector_ext<Type_>
     {
         size_check(*this, vector_obj);
-        vector_ext<_Type> ret_vec(this->size());
+        vector_ext<Type_> ret_vec(this->size());
 
 #if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
-                       [](_Type &a, _Type &b) { return a + b; });
+                       [](Type_ &a, Type_ &b) { return a + b; });
 #elif defined(USE_CUDA)
-        user_space::add(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
+        user_space::add(ret_vec, *this, vector_obj);
 #else
 #pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
@@ -275,16 +274,16 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
 
         return ret_vec;
     }
-    auto operator-(vector_ext<_Type> &vector_obj) -> vector_ext<_Type>
+    auto operator-(vector_ext<Type_> &vector_obj) -> vector_ext<Type_>
     {
         size_check(*this, vector_obj);
-        vector_ext<_Type> ret_vec(this->size());
+        vector_ext<Type_> ret_vec(this->size());
 
 #if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
-                       [](_Type &a, _Type &b) { return a - b; });
+                       [](Type_ &a, Type_ &b) { return a - b; });
 #elif defined(USE_CUDA)
-        user_space::sub(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
+        user_space::sub(ret_vec, *this, vector_obj);
 #else
 #pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
@@ -293,16 +292,16 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
 
         return ret_vec;
     }
-    auto operator*(vector_ext<_Type> &vector_obj) -> vector_ext<_Type>
+    auto operator*(vector_ext<Type_> &vector_obj) -> vector_ext<Type_>
     {
         size_check(*this, vector_obj);
-        vector_ext<_Type> ret_vec(this->size());
+        vector_ext<Type_> ret_vec(this->size());
 
 #if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
-                       [](_Type &a, _Type &b) { return a * b; });
+                       [](Type_ &a, Type_ &b) { return a * b; });
 #elif defined(USE_CUDA)
-        user_space::mul(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
+        user_space::mul(ret_vec, *this, vector_obj);
 #else
 #pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
@@ -311,19 +310,19 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
 
         return ret_vec;
     }
-    auto operator/(vector_ext<_Type> &vector_obj) -> vector_ext<_Type>
+    auto operator/(vector_ext<Type_> &vector_obj) -> vector_ext<Type_>
     {
         for (auto &i : vector_obj)
             if (i == 0)
                 throw std::range_error("vector_ext::operator/: vector_obj has 0");
 
         size_check(*this, vector_obj);
-        vector_ext<_Type> ret_vec(this->size());
+        vector_ext<Type_> ret_vec(this->size());
 #if defined(USE_EXECUTION_POLICY)
         std::transform(std::execution::par_unseq, this->begin(), this->end(), vector_obj.begin(), ret_vec.begin(),
-                       [](_Type &a, _Type &b) { return a / b; });
+                       [](Type_ &a, Type_ &b) { return a / b; });
 #elif defined(USE_CUDA)
-        user_space::div(ret_vec.data(), this->data(), vector_obj.data(), ret_vec.size());
+        user_space::div(ret_vec, *this, vector_obj);
 #else
 #pragma omp parallel for schedule(guided)
         for (auto i = 0; i < static_cast<int>(ret_vec.size()); i++)
@@ -333,10 +332,10 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         return ret_vec;
     }
 
-    auto operator++() -> vector_ext<_Type>
+    auto operator++() -> vector_ext<Type_>
     {
         auto copy = *this;
-        vector_ext<_Type> new_array(this->size() + 1);
+        vector_ext<Type_> new_array(this->size() + 1);
         new_array.at(0) = 0;
 
 #pragma omp parallel for schedule(guided)
@@ -346,15 +345,15 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         return copy;
     }
 
-    auto operator++(int) -> vector_ext<_Type> &
+    auto operator++(int) -> vector_ext<Type_> &
     {
         this->resize(this->size() + 1);
         return *this;
     }
-    auto operator--() -> _Type
+    auto operator--() -> Type_
     {
         auto val = this->at(0);
-        vector_ext<_Type> new_array(this->size() - 1);
+        vector_ext<Type_> new_array(this->size() - 1);
 
 #pragma omp parallel for schedule(guided)
         for (long long i = 1; i < this->size(); ++i)
@@ -362,9 +361,9 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         *this = std::move(new_array);
         return val;
     }
-    auto operator--(int) -> _Type
+    auto operator--(int) -> Type_
     {
-        _Type val = this->at(-1);
+        Type_ val = this->at(-1);
         this->resize(this->size() - 1);
         return val;
     }
@@ -380,12 +379,12 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
 
     template <typename Compare> auto merge_sort(const Compare comp)
     {
-        vector_ext<_Type> mergeSpace(this->end() - this->begin());
+        vector_ext<Type_> mergeSpace(this->end() - this->begin());
         mergesortInternal(this->begin(), this->end(), comp, mergeSpace.begin());
     }
     auto merge_sort()
     {
-        vector_ext<_Type> mergeSpace(this->end() - this->begin());
+        vector_ext<Type_> mergeSpace(this->end() - this->begin());
         mergesortInternal(this->begin(), this->end(), std::less<>{}, mergeSpace.begin());
     }
 
@@ -436,7 +435,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             _quick_sort(this->begin(), this->end(), std::less<>{});
     }
 
-    template <typename _Function> auto generate_random_list_lam(const _Function &function)
+    template <typename Function_> auto generate_random_list_lam(const Function_ &function)
     {
 #if defined(USE_EXECUTION_POLICY)
         std::for_each(std::execution::par, this->begin(), this->end(), function);
@@ -451,7 +450,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
             function(i);
 #endif
     }
-    auto generate_random_list_resize(const i64 length, const i64 ax0 = -300, const i64 bx0 = 300)
+    auto generate_random_list_resize(const i64 length, const i32 ax0 = -300, const i32 bx0 = 300)
     {
         resize_check(length);
         this->resize(length);
@@ -460,68 +459,68 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
         std::uniform_int_distribution<int> dist(ax0, bx0);
 
 #if defined(USE_EXECUTION_POLICY)
-        std::for_each(std::execution::par, this->begin(), this->end(), [&](_Type &n) {
-            auto val = static_cast<_Type>(dist(gen) * dist(gen));
+        std::for_each(std::execution::par, this->begin(), this->end(), [&](Type_ &n) {
+            auto val = static_cast<Type_>(dist(gen) * dist(gen));
             n = val ? val : 1;
         });
 #elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
-            auto temp = static_cast<_Type>(dist(gen) * dist(gen));
+            auto temp = static_cast<Type_>(dist(gen) * dist(gen));
             this->at(i) = (temp) ? temp : 1;
         }
 #else
-        std::for_each(this->begin(), this->end(), [&](_Type &n) {
-            auto val = static_cast<_Type>(dist(gen) * dist(gen));
+        std::for_each(this->begin(), this->end(), [&](Type_ &n) {
+            auto val = static_cast<Type_>(dist(gen) * dist(gen));
             n = val ? val : 1;
         });
 #endif
     }
-    auto generate_random_list(const i64 ax0 = -300, const i64 bx0 = 300)
+    auto generate_random_list(const i32 ax0 = -300, const i32 bx0 = 300)
     {
         std::random_device gen;
         std::uniform_int_distribution<int> dist(ax0, bx0);
 
 #if defined(USE_EXECUTION_POLICY)
-        std::for_each(std::execution::par, this->begin(), this->end(), [&](_Type &n) {
-            auto val = static_cast<_Type>(dist(gen) * dist(gen));
+        std::for_each(std::execution::par, this->begin(), this->end(), [&](Type_ &n) {
+            auto val = static_cast<Type_>(dist(gen) * dist(gen));
             n = val ? val : 1;
         });
 #elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
-            auto val = static_cast<_Type>(dist(gen) * dist(gen));
+            auto val = static_cast<Type_>(dist(gen) * dist(gen));
             this->at(i) = val ? val : 1;
         }
 #else
-        std::for_each(this->begin(), this->end(), [&](_Type &n) {
-            auto val = static_cast<_Type>(dist(gen) * dist(gen));
+        std::for_each(this->begin(), this->end(), [&](Type_ &n) {
+            auto val = static_cast<Type_>(dist(gen) * dist(gen));
             n = val ? val : 1;
         });
 #endif
     }
-    auto generate_positive_random_list(const i64 ax0 = -300, const i64 bx0 = 300)
+    auto generate_positive_random_list(const i32 ax0 = -300, const i32 bx0 = 300)
     {
         std::random_device gen;
         std::uniform_int_distribution<int> dist(ax0, bx0);
 
 #if defined(USE_EXECUTION_POLICY)
-        std::for_each(std::execution::par, this->begin(), this->end(), [&](_Type &n) {
-            auto val = static_cast<_Type>(std::abs(dist(gen) * dist(gen)));
+        std::for_each(std::execution::par, this->begin(), this->end(), [&](Type_ &n) {
+            auto val = static_cast<Type_>(std::abs(dist(gen) * dist(gen)));
             n = val ? val : 1;
         });
 #elif defined(USE_OPENMP)
 #pragma omp parallel for schedule(guided)
         for (i32 i = 0; i < this->size(); ++i)
         {
-            auto val = std::abs(static_cast<_Type>(dist(gen) * dist(gen)));
+            auto val = std::abs(static_cast<Type_>(dist(gen) * dist(gen)));
             this->at(i) = val ? val : 1;
         }
 #else
-        std::for_each(this->begin(), this->end(), [&](_Type &n) {
-            auto val = std::abs(static_cast<_Type>(dist(gen) * dist(gen)));
+        std::for_each(this->begin(), this->end(), [&](Type_ &n) {
+            auto val = std::abs(static_cast<Type_>(dist(gen) * dist(gen)));
             n = val ? val : 1;
         });
 #endif
@@ -534,7 +533,7 @@ template <typename _Type> class vector_ext : public std::vector<_Type>
     }
 #endif
 
-    auto copy(vector_ext<_Type> &dest)
+    auto copy(vector_ext<Type_> &dest)
     {
         size_check(*this, dest);
 

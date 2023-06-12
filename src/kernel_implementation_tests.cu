@@ -1,7 +1,5 @@
 ﻿#include "kernel_impl.cuh"
 
-#include "types.cuh"
-
 #include <iostream>
 #include <map>
 #include <optional>
@@ -60,7 +58,7 @@ class test_kernel_implementation_class
   private:
     std::map<test_kernel_implementations_enum::tests, std::optional<std::string>> results;
 
-    bool check_1d_array_result(int *expected_result, int *result, int size)
+    static bool check_1d_array_result(int const *expected_result, int const *result, int size)
     {
         for (int i = 0; i < size; i++)
         {
@@ -72,8 +70,8 @@ class test_kernel_implementation_class
         return true;
     }
 
-    template <typename _Type, std::size_t size>
-    bool check_1d_array_result(std::array<_Type, size> expected_result, std::array<_Type, size> result)
+    template <typename Type_, std::size_t size>
+    static bool check_1d_array_result(std::array<Type_, size> expected_result, std::array<Type_, size> result)
     {
         for (int i = 0; i < size; i++)
         {
@@ -83,7 +81,7 @@ class test_kernel_implementation_class
         return true;
     }
 
-    std::string print_1d_array(int *array, int size)
+    static std::string print_1d_array(int const *array, int size)
     {
         std::stringstream ss;
         ss << "[";
@@ -100,7 +98,7 @@ class test_kernel_implementation_class
         return ss.str();
     }
 
-    template <typename _Type, std::size_t size> std::string print_1d_array(std::array<_Type, size> array)
+    template <typename Type_, std::size_t size> std::string print_1d_array(std::array<Type_, size> array)
     {
         std::stringstream ss;
         ss << "[";
@@ -122,7 +120,7 @@ class test_kernel_implementation_class
         std::array<int, 5> left_array = {1, 2, 3, 4, 5};
         std::array<int, 5> right_array = {1, 2, 3, 4, 5};
 
-        std::array<int, 5> result;
+        std::array<int, 5> result{};
         std::array<int, 5> expected_result = {2, 4, 6, 8, 10};
 
         std_vec::user_space::add(result, left_array, right_array);
@@ -142,7 +140,7 @@ class test_kernel_implementation_class
         std::array<int, 5> left_array = {1, 2, 3, 4, 5};
         std::array<int, 5> right_array = {1, 2, 3, 4, 5};
 
-        std::array<int, 5> result;
+        std::array<int, 5> result{};
         std::array<int, 5> expected_result = {0, 0, 0, 0, 0};
 
         std_vec::user_space::sub(result, left_array, right_array);
@@ -163,7 +161,7 @@ class test_kernel_implementation_class
         std::array<int, 5> left_array = {1, 2, 3, 4, 5};
         std::array<int, 5> right_array = {1, 2, 3, 4, 5};
 
-        std::array<int, 5> result;
+        std::array<int, 5> result{};
         std::array<int, 5> expected_result = {1, 4, 9, 16, 25};
 
         std_vec::user_space::mul(result, left_array, right_array);
@@ -183,7 +181,7 @@ class test_kernel_implementation_class
         std::array<int, 5> left_array = {1, 2, 3, 4, 5};
         std::array<int, 5> right_array = {1, 2, 3, 4, 5};
 
-        std::array<int, 5> result;
+        std::array<int, 5> result{};
         std::array<int, 5> expected_result = {1, 1, 1, 1, 1};
 
         std_vec::user_space::div(result, left_array, right_array);
@@ -220,7 +218,6 @@ class test_kernel_implementation_class
 
     void test_generate_random_number_user_space_with_seed()
     {
-        // std::cout << "test_generate_random_number_user_space_with_seed" << std::endl;
         std::stringstream ss;
         ss << "test_generate_random_number_user_space_with_seed" << std::endl;
         results[test_kernel_implementations_enum::tests::generate_random_number_user_space_with_seed] = ss.str();
@@ -228,7 +225,6 @@ class test_kernel_implementation_class
 
     void test_matrix_multiply_user_space()
     {
-        // std::cout << "test_matrix_multiply_user_space" << std::endl;
         std::stringstream ss;
         ss << "test_matrix_multiply_user_space" << std::endl;
         results[test_kernel_implementations_enum::tests::matrix_multiply_user_space] = ss.str();
@@ -236,7 +232,6 @@ class test_kernel_implementation_class
 
     void test_matrix_multiply_user_space_with_squished_matrix()
     {
-        // std::cout << "test_matrix_multiply_user_space_with_squished_matrix" << std::endl;
         std::stringstream ss;
         ss << "test_matrix_multiply_user_space_with_squished_matrix" << std::endl;
         results[test_kernel_implementations_enum::tests::matrix_multiply_user_space_with_squished_matrix] = ss.str();

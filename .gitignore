@@ -2,3 +2,5 @@
 /build
 /.fleet
 /.git
+/.idea
+/cmake-build-debug

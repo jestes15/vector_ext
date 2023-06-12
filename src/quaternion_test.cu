@@ -1,5 +1,4 @@
 #include "quaternion.cuh"
-#include "types.cuh"
 
 #include <iostream>
 #include <map>
@@ -193,8 +192,8 @@ class test_quaternion_class
     }
     void test_one_parameter_constructor()
     {
-        quaternion q = quaternion(1);
-        quaternion expected_result = quaternion(1, 0, 0, 0);
+        auto q = quaternion(1);
+        auto expected_result = quaternion(1, 0, 0, 0);
 
         if (q == expected_result)
             this->results[test_quaternion_enum::one_parameter_constructor] = std::nullopt;
@@ -228,8 +227,8 @@ class test_quaternion_class
         {
             1, 2, 3
         };
-        quaternion q = quaternion(uv);
-        quaternion expected_result = quaternion(0, 1, 2, 3);
+        auto q = quaternion(uv);
+        auto expected_result = quaternion(0, 1, 2, 3);
 
         if (q == expected_result)
             this->results[test_quaternion_enum::unit_vector_constructor_no_q0] = std::nullopt;
@@ -260,8 +259,8 @@ class test_quaternion_class
     void test_classic_array_constructor_no_q0()
     {
         int arr[3] = {3, 4, 5};
-        quaternion q = quaternion(arr);
-        quaternion expected_result = quaternion(0, 3, 4, 5);
+        auto q = quaternion(arr);
+        auto expected_result = quaternion(0, 3, 4, 5);
 
         if (q == expected_result)
             this->results[test_quaternion_enum::classic_array_constructor] = std::nullopt;
@@ -292,8 +291,8 @@ class test_quaternion_class
     void test_standard_array_constructor_no_q0()
     {
         std::array<int, 3> arr = {3, 4, 5};
-        quaternion q = quaternion(arr);
-        quaternion expected_result = quaternion(0, 3, 4, 5);
+        auto q = quaternion(arr);
+        auto expected_result = quaternion(0, 3, 4, 5);
 
         if (q == expected_result)
             this->results[test_quaternion_enum::standard_array_constructor_no_q0] = std::nullopt;
@@ -308,8 +307,8 @@ class test_quaternion_class
     void test_standard_array_constructor_four()
     {
         std::array<int, 4> arr = {2, 3, 4, 5};
-        quaternion q = quaternion(arr);
-        quaternion expected_result = quaternion(2, 3, 4, 5);
+        auto q = quaternion(arr);
+        auto expected_result = quaternion(2, 3, 4, 5);
 
         if (q == expected_result)
             this->results[test_quaternion_enum::standard_array_constructor_four] = std::nullopt;
@@ -602,11 +601,11 @@ class test_quaternion_class
     void test_quaternion_rotate_not_normalized()
     {
         quaternion q = quaternion(1, 2, 3, 4);
-        rotation_vector<double> v = rotation_vector<double>{1.0, 2.0, 3.0};
+        auto v = rotation_vector<f64>{1.0, 2.0, 3.0};
 
-        rotation_vector<double> result = q.rotate(v);
-        rotation_vector<double> expected_result =
-            rotation_vector<double>{1.666666666666667, 2.266666666666667, 2.466666666666667};
+        auto result = q.rotate(v);
+        auto expected_result =
+            rotation_vector<f64>{1.666666666666667, 2.266666666666667, 2.466666666666667};
 
         if (abs(result - expected_result) < this->rotation_epsilon)
             this->results[test_quaternion_enum::quaternion_rotate_not_normalized] = std::nullopt;
@@ -620,7 +619,7 @@ class test_quaternion_class
     }
     
     quaternion quaternion_epsilon = quaternion(0.00001, 0.00001, 0.00001, 0.00001);
-    rotation_vector<double> rotation_epsilon = rotation_vector<double>{0.00001, 0.00001, 0.00001};
+    rotation_vector<f64> rotation_epsilon = rotation_vector<f64>{0.00001, 0.00001, 0.00001};
 };
 } // namespace test_quaternion
 
