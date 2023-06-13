@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <random>
@@ -22,8 +23,7 @@
 
 namespace std_vec
 {
-template <typename Type_>
-class vector_ext : public std::vector<Type_>
+template <typename Type_> class vector_ext : public std::vector<Type_>
 {
   private:
     /* Calculates the depth limit given the size of a vector
@@ -31,7 +31,7 @@ class vector_ext : public std::vector<Type_>
      */
     auto depth_limit(const i64 size)
     {
-        return static_cast<i64>(2 * floor(log(static_cast<f64>(size))));
+        return static_cast<i64>(2 * floor(log2(static_cast<f64>(size))));
     }
 
     /* Swaps a and b
@@ -118,7 +118,7 @@ class vector_ext : public std::vector<Type_>
     /* Driver for insertion sort
      * Usage: _insertion_sort(std::begin(vector), std::end(vector), std::less<>())
      */
-    template <typename Iter_, typename Compare> auto _insertion_sort(Iter_ begin, Iter_ end, Compare comp)
+    template <typename Iter_, typename Compare> auto _insertion_sort(Iter_ begin, Iter_ end, const Compare comp)
     {
         for (auto it = begin + 1; it != end; ++it)
         {
@@ -134,6 +134,26 @@ class vector_ext : public std::vector<Type_>
                 else
                     break;
             }
+        }
+    }
+
+    template <typename Iter_, typename Compare>
+    void _introspective_sort(Iter_ begin, Iter_ end, const Compare comp, i64 max_depth)
+    {
+        auto size = std::distance(begin, end);
+        constexpr auto insertion_sort_max_val = 16;
+
+        if (size < insertion_sort_max_val)
+            _insertion_sort(begin, end, comp);
+
+        else if (max_depth == 0)
+            _heap_sort(begin, end, comp);
+
+        else
+        {
+            auto partition = partition_iterator(begin, end, comp);
+            _introspective_sort(begin, partition - 1, comp, max_depth - 1);
+            _introspective_sort(partition, end, comp, max_depth - 1);
         }
     }
 
@@ -344,12 +364,12 @@ class vector_ext : public std::vector<Type_>
         *this = new_array;
         return copy;
     }
-
     auto operator++(int) -> vector_ext<Type_> &
     {
-        this->resize(this->size() + 1);
+        this->emplace_back(0);
         return *this;
     }
+
     auto operator--() -> Type_
     {
         auto val = this->at(0);
@@ -406,33 +426,15 @@ class vector_ext : public std::vector<Type_>
         _insertion_sort(this->begin(), this->end(), std::less<>{});
     }
 
-    template <typename Compare> auto sort(Compare comp)
+    template <typename Compare> auto sort(const Compare comp)
     {
-        auto size = std::distance(this->begin(), this->end());
-        constexpr auto insertion_sort_max_val = 16;
-
-        if (size < insertion_sort_max_val)
-            _insertion_sort(this->begin(), this->end(), comp);
-
-        else if (depth_limit(size) == 0)
-            _heap_sort(this->begin(), this->end(), comp);
-
-        else
-            _quick_sort(this->begin(), this->end(), comp);
+        i64 max_depth = depth_limit(this->size());
+        _introspective_sort(this->begin(), this->end(), comp, max_depth);
     }
     auto sort()
     {
-        auto size = std::distance(this->begin(), this->end());
-        constexpr auto insertion_sort_max_val = 16;
-
-        if (size < insertion_sort_max_val)
-            _insertion_sort(this->begin(), this->end(), std::less<>{});
-
-        else if (depth_limit(size) == 0)
-            _heap_sort(this->begin(), this->end(), std::less<>{});
-
-        else
-            _quick_sort(this->begin(), this->end(), std::less<>{});
+        i64 max_depth = depth_limit(this->size());
+        _introspective_sort(this->begin(), this->end(), std::less<>(), max_depth);
     }
 
     template <typename Function_> auto generate_random_list_lam(const Function_ &function)

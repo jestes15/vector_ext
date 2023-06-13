@@ -34,6 +34,8 @@ target_link_libraries(kernel_impl_test CUDA::curand)
 add_executable(quaternion_test src/quaternion_test.cu)
 target_link_libraries(quaternion_test)
 
+add_executable(vector_ext_test src/vector_ext_test.cu)
+
 add_executable(vector_ext_test_cuda src/vector_ext_cuda_test.cu)
 target_link_libraries(vector_ext_test_cuda CUDA::curand)
 

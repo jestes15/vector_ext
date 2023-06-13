@@ -10,17 +10,13 @@
 namespace test_vector_ext_cuda {
     namespace test_vector_ext_cuda_enum {
         enum tests {
-            at_operation_positive_index,
-            at_operation_negative_index,
             addition_operation,
             subtraction_operation,
             multiplication_operation,
-            division_operation
+            division_operation,
         };
 
         std::map<tests, std::string> test_names = {
-                {at_operation_positive_index, "at_operation_positive_index"},
-                {at_operation_negative_index, "at_operation_negative_index"},
                 {addition_operation, "addition_operation"},
                 {subtraction_operation, "subtraction_operation"},
                 {multiplication_operation, "multiplication_operation"},
@@ -35,12 +31,10 @@ namespace test_vector_ext_cuda {
 
         std::map<test_vector_ext_cuda_enum::tests, std::optional<std::string>> run()
         {
-            test_at_operation_positive_index();
-            test_at_operation_negative_index();
-
             test_addition_operator();
             test_subtraction_operator();
             test_multiplication_operator();
+            test_division_operator();
 
             return results;
         }
@@ -58,36 +52,6 @@ namespace test_vector_ext_cuda {
             return ss.str();
         }
 
-        void test_at_operation_positive_index()
-        {
-            std_vec::vector_ext<i32> rh = {1, 2, 3, 4};
-            auto expected_result = 3;
-
-            if (rh.at(2) == expected_result)
-                this->results[test_vector_ext_cuda_enum::at_operation_positive_index] = std::nullopt;
-            else
-            {
-                std::stringstream ss;
-                ss << "Testing " << test_vector_ext_cuda_enum::test_names[test_vector_ext_cuda_enum::at_operation_positive_index]
-                   << " failed. Expected: " << expected_result << " Got: " << rh.at(2);
-                this->results[test_vector_ext_cuda_enum::at_operation_positive_index] = ss.str();
-            }
-        }
-        void test_at_operation_negative_index()
-        {
-            std_vec::vector_ext<i32> rh = {1, 2, 3, 4};
-            auto expected_result = 2;
-
-            if (rh.at(-3) == expected_result)
-                this->results[test_vector_ext_cuda_enum::at_operation_negative_index] = std::nullopt;
-            else
-            {
-                std::stringstream ss;
-                ss << "Testing " << test_vector_ext_cuda_enum::test_names[test_vector_ext_cuda_enum::at_operation_negative_index]
-                   << " failed. Expected: " << expected_result << " Got: " << rh.at(2);
-                this->results[test_vector_ext_cuda_enum::at_operation_negative_index] = ss.str();
-            }
-        }
         void test_addition_operator() {
             std_vec::vector_ext<i32> rh{1, 2, 3, 4};
             std_vec::vector_ext<i32> lh{9, 8, 7, 6};
