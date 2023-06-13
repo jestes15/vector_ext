@@ -1,6 +1,7 @@
 #ifndef VECTOR_EXT_HPP
 #define VECTOR_EXT_HPP
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -31,7 +32,7 @@ template <typename Type_> class vector_ext : public std::vector<Type_>
      */
     auto depth_limit(const i64 size)
     {
-        return static_cast<i64>(2 * floor(log2(static_cast<f64>(size))));
+        return static_cast<i64>(2 * floor(log(static_cast<f64>(size))));
     }
 
     /* Swaps a and b
@@ -53,12 +54,13 @@ template <typename Type_> class vector_ext : public std::vector<Type_>
         auto i = first;
         for (auto j = first; j != pivot; ++j)
         {
+            // bool format
             if (comp(*j, *pivot))
             {
-                this->swap(*i++, *j);
+                std::swap(*i++, *j);
             }
         }
-        this->swap(*i, *pivot);
+        std::swap(*i, *pivot);
         return i;
     }
 
@@ -143,17 +145,17 @@ template <typename Type_> class vector_ext : public std::vector<Type_>
         auto size = std::distance(begin, end);
         constexpr auto insertion_sort_max_val = 16;
 
-        if (size < insertion_sort_max_val)
+        if (size < insertion_sort_max_val && size > 1)
             _insertion_sort(begin, end, comp);
 
-        else if (max_depth == 0)
+        else if (max_depth == 0 && size > 1)
             _heap_sort(begin, end, comp);
 
-        else
+        else if (size > 1)
         {
             auto partition = partition_iterator(begin, end, comp);
-            _introspective_sort(begin, partition - 1, comp, max_depth - 1);
-            _introspective_sort(partition, end, comp, max_depth - 1);
+            _introspective_sort(begin, partition, comp, max_depth - 1);
+            _introspective_sort(partition + 1, end, comp, max_depth - 1);
         }
     }
 

@@ -5,6 +5,8 @@
 #include <optional>
 #include <sstream>
 
+#include "text_formatting.cuh"
+
 namespace test_vector_ext
 {
 namespace test_vector_ext_enum
@@ -94,8 +96,9 @@ class test_vector_ext_class
         test_insertion_sort_without_compare();
 
         test_sort_with_compare_vector_length_less_than_16();
-        // test_sort_with_compare_vector_depth_limit_is_zero();
+        test_sort_with_compare_vector_depth_limit_is_zero();
         test_sort_with_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero();
+
         test_sort_without_compare_vector_length_less_than_16();
         test_sort_without_compare_vector_depth_limit_is_zero();
         test_sort_without_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero();
@@ -110,15 +113,8 @@ class test_vector_ext_class
     {
         std::stringstream ss;
         ss << "[";
-        std::for_each(array.begin(), array.end(), [&](Type_ i) {
-            if (i != array.at(array.size() - 1))
-            {
-                ss << i << " ";
-            }
-            else
-                ss << i;
-        });
-        ss << "]";
+        std::for_each(array.begin(), array.end(), [&](Type_ i) { ss << i << " "; });
+        ss << "\b]";
 
         return ss.str();
     }
@@ -413,7 +409,7 @@ class test_vector_ext_class
         std_vec::vector_ext<i32> original = {9};
         std_vec::vector_ext<i32> expected_result = {9};
 
-        original.sort(std::greater<>());
+        original.sort(std::greater<i32>());
 
         if (expected_result == original)
             this->results[test_vector_ext_enum::sort_with_compare_vector_length_less_than_16] = std::nullopt;
@@ -426,10 +422,103 @@ class test_vector_ext_class
             this->results[test_vector_ext_enum::sort_with_compare_vector_length_less_than_16] = ss.str();
         }
     }
-    /*
-    void test_sort_with_compare_vector_depth_limit_is_zero() {
-        std_vec::vector_ext<i32> original = {55, 92, 22, 35, 55, 40, 48, 91, 98, 60, 4, 99, 33, 18, 90, 14, 69, 64, 62,
-    67}; std_vec::vector_ext<i32> expected_result = {9};
+    void test_sort_with_compare_vector_depth_limit_is_zero()
+    {
+        std_vec::vector_ext<i32> original = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76,
+            53, 64, 39, 4,  34, 65, 10, 29,  51, 95, 77, 46, 65, 81,  8,  99,  14, 24, 4,  91, 76, 20, 10, 40, 43,
+            82, 25, 64, 28, 79, 5,  18, 60,  83, 43, 46, 89, 88, 35,  78, 26,  19, 68, 12, 85, 85, 71, 78, 20, 75,
+            85, 33, 44, 56, 56, 4,  92, 77,  81, 2,  92, 32, 95, 30,  96, 89,  31, 63, 52, 0,  23, 15, 96, 98, 5,
+            79, 34, 92, 82, 25, 54, 60, 77,  46, 43, 79, 10, 37, 72,  40, 86,  76, 63, 41, 12, 7,  10, 56, 79, 63,
+            9,  50, 88, 71, 97, 36, 92, 16,  82, 14, 92, 3,  27, 5,   82, 74,  27, 37, 76, 11, 19, 40, 10, 45, 41,
+            30, 64, 93, 6,  2,  2,  6,  46,  69, 18, 81, 25, 53, 2,   22, 93,  31, 66, 91, 83, 68, 88, 46, 76, 22,
+            4,  12, 47, 55, 69, 81, 21, 43,  21, 70, 32, 21, 12, 86,  20, 4,   45, 85, 15, 58, 42, 60, 44, 98, 65,
+            10, 18, 42, 29, 24, 65, 59, 76,  8,  72, 78, 75, 96, 91,  58, 25,  96, 72, 81, 92, 11, 80, 18, 39, 42,
+            86, 88, 64, 98, 20, 69, 56, 54,  10, 41, 7,  74, 89, 55,  16, 17,  91, 95, 46, 46, 8,  2,  57, 74, 22,
+            74, 57, 83, 83, 11, 37, 90, 58,  39, 98, 76, 54, 32, 17,  61, 35,  37, 65, 63, 8,  2,  99, 50, 6,  75};
+
+        std_vec::vector_ext<i32> expected_result = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76,
+            53, 64, 39, 4,  34, 65, 10, 29,  51, 95, 77, 46, 65, 81,  8,  99,  14, 24, 4,  91, 76, 20, 10, 40, 43,
+            82, 25, 64, 28, 79, 5,  18, 60,  83, 43, 46, 89, 88, 35,  78, 26,  19, 68, 12, 85, 85, 71, 78, 20, 75,
+            85, 33, 44, 56, 56, 4,  92, 77,  81, 2,  92, 32, 95, 30,  96, 89,  31, 63, 52, 0,  23, 15, 96, 98, 5,
+            79, 34, 92, 82, 25, 54, 60, 77,  46, 43, 79, 10, 37, 72,  40, 86,  76, 63, 41, 12, 7,  10, 56, 79, 63,
+            9,  50, 88, 71, 97, 36, 92, 16,  82, 14, 92, 3,  27, 5,   82, 74,  27, 37, 76, 11, 19, 40, 10, 45, 41,
+            30, 64, 93, 6,  2,  2,  6,  46,  69, 18, 81, 25, 53, 2,   22, 93,  31, 66, 91, 83, 68, 88, 46, 76, 22,
+            4,  12, 47, 55, 69, 81, 21, 43,  21, 70, 32, 21, 12, 86,  20, 4,   45, 85, 15, 58, 42, 60, 44, 98, 65,
+            10, 18, 42, 29, 24, 65, 59, 76,  8,  72, 78, 75, 96, 91,  58, 25,  96, 72, 81, 92, 11, 80, 18, 39, 42,
+            86, 88, 64, 98, 20, 69, 56, 54,  10, 41, 7,  74, 89, 55,  16, 17,  91, 95, 46, 46, 8,  2,  57, 74, 22,
+            74, 57, 83, 83, 11, 37, 90, 58,  39, 98, 76, 54, 32, 17,  61, 35,  37, 65, 63, 8,  2,  99, 50, 6,  75};
+
+        std::sort(expected_result.begin(), expected_result.end(), std::greater<i32>());
+
+        original.sort(std::greater<i32>());
+
+        if (expected_result == original)
+            this->results[test_vector_ext_enum::sort_with_compare_vector_depth_limit_is_zero] = std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Testing "
+               << test_vector_ext_enum::test_names[test_vector_ext_enum::sort_with_compare_vector_depth_limit_is_zero]
+               << " failed. Expected: " << print_1d_array(expected_result) << " Got: " << print_1d_array(original);
+            this->results[test_vector_ext_enum::sort_with_compare_vector_depth_limit_is_zero] = ss.str();
+        }
+    }
+    void test_sort_with_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero()
+    {
+        std_vec::vector_ext<i32> original = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76};
+
+        std_vec::vector_ext<i32> expected_result = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76};
+
+        std::sort(expected_result.begin(), expected_result.end(), std::greater<i32>());
+
+        original.sort(std::greater<i32>());
+
+        if (expected_result == original)
+            this->results[test_vector_ext_enum::
+                              sort_with_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero] =
+                std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Testing "
+               << test_vector_ext_enum::test_names
+                      [test_vector_ext_enum::
+                           sort_with_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero]
+               << " failed. Expected: " << print_1d_array(expected_result) << " Got: " << print_1d_array(original);
+            this->results[test_vector_ext_enum::
+                              sort_with_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero] =
+                ss.str();
+        }
+    }
+
+    void test_sort_without_compare_vector_length_less_than_16()
+    {
+        std_vec::vector_ext<i32> original = {9};
+        std_vec::vector_ext<i32> expected_result = {9};
 
         original.sort();
 
@@ -438,25 +527,105 @@ class test_vector_ext_class
         else
         {
             std::stringstream ss;
-            ss << "Testing " <<
-    test_vector_ext_enum::test_names[test_vector_ext_enum::sort_without_compare_vector_length_less_than_16]
-               << " failed. Expected: " << print_1d_array(expected_result)
-               << " Got: " << print_1d_array(original);
+            ss << "Testing "
+               << test_vector_ext_enum::test_names
+                      [test_vector_ext_enum::sort_without_compare_vector_length_less_than_16]
+               << " failed. Expected: " << print_1d_array(expected_result) << " Got: " << print_1d_array(original);
             this->results[test_vector_ext_enum::sort_without_compare_vector_length_less_than_16] = ss.str();
         }
     }
-    */
-    void test_sort_with_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero()
-    {
-    }
-    void test_sort_without_compare_vector_length_less_than_16()
-    {
-    }
     void test_sort_without_compare_vector_depth_limit_is_zero()
     {
+        std_vec::vector_ext<i32> original = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76,
+            53, 64, 39, 4,  34, 65, 10, 29,  51, 95, 77, 46, 65, 81,  8,  99,  14, 24, 4,  91, 76, 20, 10, 40, 43,
+            82, 25, 64, 28, 79, 5,  18, 60,  83, 43, 46, 89, 88, 35,  78, 26,  19, 68, 12, 85, 85, 71, 78, 20, 75,
+            85, 33, 44, 56, 56, 4,  92, 77,  81, 2,  92, 32, 95, 30,  96, 89,  31, 63, 52, 0,  23, 15, 96, 98, 5,
+            79, 34, 92, 82, 25, 54, 60, 77,  46, 43, 79, 10, 37, 72,  40, 86,  76, 63, 41, 12, 7,  10, 56, 79, 63,
+            9,  50, 88, 71, 97, 36, 92, 16,  82, 14, 92, 3,  27, 5,   82, 74,  27, 37, 76, 11, 19, 40, 10, 45, 41,
+            30, 64, 93, 6,  2,  2,  6,  46,  69, 18, 81, 25, 53, 2,   22, 93,  31, 66, 91, 83, 68, 88, 46, 76, 22,
+            4,  12, 47, 55, 69, 81, 21, 43,  21, 70, 32, 21, 12, 86,  20, 4,   45, 85, 15, 58, 42, 60, 44, 98, 65,
+            10, 18, 42, 29, 24, 65, 59, 76,  8,  72, 78, 75, 96, 91,  58, 25,  96, 72, 81, 92, 11, 80, 18, 39, 42,
+            86, 88, 64, 98, 20, 69, 56, 54,  10, 41, 7,  74, 89, 55,  16, 17,  91, 95, 46, 46, 8,  2,  57, 74, 22,
+            74, 57, 83, 83, 11, 37, 90, 58,  39, 98, 76, 54, 32, 17,  61, 35,  37, 65, 63, 8,  2,  99, 50, 6,  75};
+
+        std_vec::vector_ext<i32> expected_result = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76,
+            53, 64, 39, 4,  34, 65, 10, 29,  51, 95, 77, 46, 65, 81,  8,  99,  14, 24, 4,  91, 76, 20, 10, 40, 43,
+            82, 25, 64, 28, 79, 5,  18, 60,  83, 43, 46, 89, 88, 35,  78, 26,  19, 68, 12, 85, 85, 71, 78, 20, 75,
+            85, 33, 44, 56, 56, 4,  92, 77,  81, 2,  92, 32, 95, 30,  96, 89,  31, 63, 52, 0,  23, 15, 96, 98, 5,
+            79, 34, 92, 82, 25, 54, 60, 77,  46, 43, 79, 10, 37, 72,  40, 86,  76, 63, 41, 12, 7,  10, 56, 79, 63,
+            9,  50, 88, 71, 97, 36, 92, 16,  82, 14, 92, 3,  27, 5,   82, 74,  27, 37, 76, 11, 19, 40, 10, 45, 41,
+            30, 64, 93, 6,  2,  2,  6,  46,  69, 18, 81, 25, 53, 2,   22, 93,  31, 66, 91, 83, 68, 88, 46, 76, 22,
+            4,  12, 47, 55, 69, 81, 21, 43,  21, 70, 32, 21, 12, 86,  20, 4,   45, 85, 15, 58, 42, 60, 44, 98, 65,
+            10, 18, 42, 29, 24, 65, 59, 76,  8,  72, 78, 75, 96, 91,  58, 25,  96, 72, 81, 92, 11, 80, 18, 39, 42,
+            86, 88, 64, 98, 20, 69, 56, 54,  10, 41, 7,  74, 89, 55,  16, 17,  91, 95, 46, 46, 8,  2,  57, 74, 22,
+            74, 57, 83, 83, 11, 37, 90, 58,  39, 98, 76, 54, 32, 17,  61, 35,  37, 65, 63, 8,  2,  99, 50, 6,  75};
+
+        std::sort(expected_result.begin(), expected_result.end());
+
+        original.sort();
+
+        if (expected_result == original)
+            this->results[test_vector_ext_enum::sort_without_compare_vector_depth_limit_is_zero] = std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Testing "
+               << test_vector_ext_enum::test_names
+                      [test_vector_ext_enum::sort_without_compare_vector_depth_limit_is_zero]
+               << " failed. Expected: " << print_1d_array(expected_result) << " Got: " << print_1d_array(original);
+            this->results[test_vector_ext_enum::sort_without_compare_vector_depth_limit_is_zero] = ss.str();
+        }
     }
     void test_sort_without_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero()
     {
+        std_vec::vector_ext<i32> original = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76};
+
+        std_vec::vector_ext<i32> expected_result = {
+            8,  84, 28, 89, 28, 30, 13, 67,  77, 55, 34, 75, 16, 31,  14, 43,  76, 8,  99, 59, 96, 29, 49, 54, 87,
+            57, 17, 23, 9,  42, 62, 83, 100, 52, 80, 15, 61, 60, 46,  67, 24,  24, 57, 68, 30, 19, 16, 35, 37, 60,
+            21, 34, 1,  95, 26, 62, 96, 24,  6,  14, 21, 79, 97, 10,  66, 100, 78, 8,  18, 87, 50, 0,  29, 23, 89,
+            74, 42, 60, 70, 95, 72, 38, 39,  1,  27, 87, 54, 51, 17,  76, 94,  83, 77, 89, 93, 47, 76, 2,  96, 83,
+            22, 81, 57, 47, 90, 41, 65, 92,  70, 52, 31, 93, 1,  100, 60, 22,  30, 95, 19, 81, 58, 0,  60, 58, 3,
+            6,  9,  99, 23, 13, 52, 62, 8,   21, 32, 93, 43, 42, 21,  53, 51,  73, 44, 21, 98, 40, 61, 93, 39, 76};
+
+        std::sort(expected_result.begin(), expected_result.end());
+
+        original.sort();
+
+        if (expected_result == original)
+            this->results[test_vector_ext_enum::
+                              sort_without_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero] =
+                std::nullopt;
+        else
+        {
+            std::stringstream ss;
+            ss << "Testing "
+               << test_vector_ext_enum::test_names
+                      [test_vector_ext_enum::
+                           sort_without_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero]
+               << " failed. Expected: " << print_1d_array(expected_result) << " Got: " << print_1d_array(original);
+            this->results[test_vector_ext_enum::
+                              sort_without_compare_vector_length_greater_than_zero_and_depth_limit_greater_than_zero] =
+                ss.str();
+        }
     }
 
     f64 epsilon = 0.00001;
@@ -471,13 +640,21 @@ int main()
 
     for (auto const &result : results)
     {
-        if (result.second.has_value())
-            std::cout << "Test " << test_vector_ext::test_vector_ext_enum::test_names[result.first]
-                      << " failed: " << result.second.value() << std::endl;
+        std::stringstream ss;
+        bool fail = false;
+        if (result.second.has_value()) {
+            fail = true;
+            ss << "Test " << test_vector_ext::test_vector_ext_enum::test_names[result.first]
+               << " failed: " << result.second.value() << std::endl;
+        }
         else
         {
-            std::cout << "Test " << test_vector_ext::test_vector_ext_enum::test_names[result.first] << " passed"
-                      << std::endl;
+            ss << "Test " << test_vector_ext::test_vector_ext_enum::test_names[result.first] << " passed" << std::endl;
         }
+
+        if (fail)
+            std::cout << RED(ss.str());
+        else
+            std::cout << GREEN(ss.str());
     }
 }

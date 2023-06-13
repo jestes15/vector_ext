@@ -26,7 +26,7 @@ find_package(CUDAToolkit REQUIRED curand)
 find_package(OpenMP REQUIRED)
 find_package(TBB REQUIRED)
 
-include_directories(include)
+include_directories(include text_includes)
 
 add_executable(kernel_impl_test src/kernel_implementation_tests.cu)
 target_link_libraries(kernel_impl_test CUDA::curand)
