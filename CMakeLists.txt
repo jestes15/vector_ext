@@ -39,8 +39,8 @@ add_executable(vector_ext_test src/vector_ext_test.cu)
 add_executable(vector_ext_test_cuda src/vector_ext_cuda_test.cu)
 target_link_libraries(vector_ext_test_cuda CUDA::curand)
 
-add_executable(vector_ext_test_openmp src/vector_ext_openmp_test.cu)
-target_link_libraries(vector_ext_test_openmp OpenMP::OpenMP_CXX)
-
 add_executable(vector_ext_test_execution src/vector_ext_execution_policy_test.cu)
 target_link_libraries(vector_ext_test_execution TBB::tbb)
+
+add_executable(simd_vector_ops_test src/simd_vector_ops_test.cpp)
+target_link_libraries(simd_vector_ops_test)
