@@ -4,6 +4,7 @@
 #include <string>
 #include <optional>
 
+#include <simd_vector_operations.hpp>
 
 namespace simd_vector_operations_neon {
     namespace simd_vector_operations_neon_enum {

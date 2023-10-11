@@ -4,6 +4,10 @@
 
 namespace simd
 {
+namespace neon
+{
+namespace __addition
+{
 void vec_add_u8x8(uint8_t dst[8], uint8_t src1[8], uint8_t src2[8])
 {
     uint8x8_t v1 = vld1_u8(src1);
@@ -60,4 +64,17 @@ void vec_add_u64x1(uint64_t dst[1], uint64_t src1[1], uint64_t src2[1])
     vst1_u64(dst, v3);
 }
 
+void vec_add_u64x2(uint64_t dst[2], uint64_t src1[2], uint64_t src2[2]) {
+    uint64x2_t v1 = vld1q_u64(src1);
+    uint64x2_t v2 = vld1q_u64(src2);
+    uint64x2_t v3 = vaddq_u64(v1, v2);
+    vst1q_u64(dst, v3);
+}
+} // namespace
+namespace __subtraction {}
+namespace __multiplication {}
+namespace addition {}
+namespace subtraction {}
+namespace multiplication {}
+} // namespace neon
 } // namespace simd

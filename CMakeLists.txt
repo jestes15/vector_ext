@@ -42,5 +42,5 @@ target_link_libraries(vector_ext_test_cuda CUDA::curand)
 add_executable(vector_ext_test_execution src/vector_ext_execution_policy_test.cu)
 target_link_libraries(vector_ext_test_execution TBB::tbb)
 
-add_executable(simd_vector_ops_test src/simd_vector_ops_test.cpp)
+add_executable(simd_vector_ops_test src/simd_vector_operations_neon.cpp)
 target_link_libraries(simd_vector_ops_test)
